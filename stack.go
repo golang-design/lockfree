@@ -19,13 +19,13 @@ func NewStack() *Stack {
 // Pop pops value from the top of the stack.
 func (s *Stack) Pop() interface{} {
 	var top, next unsafe.Pointer
-	var item *stackitem
+	var item *directItem
 	for {
 		top = atomic.LoadPointer(&s.top)
 		if top == nil {
 			return nil
 		}
-		item = (*stackitem)(top)
+		item = (*directItem)(top)
 		next = atomic.LoadPointer(&item.next)
 		if atomic.CompareAndSwapPointer(&s.top, top, next) {
 			atomic.AddUint64(&s.len, ^uint64(0))
@@ -36,7 +36,7 @@ func (s *Stack) Pop() interface{} {
 
 // Push pushes a value on top of the stack.
 func (s *Stack) Push(v interface{}) {
-	item := stackitem{v: v}
+	item := directItem{v: v}
 	var top unsafe.Pointer
 	for {
 		top = atomic.LoadPointer(&s.top)
@@ -46,9 +46,4 @@ func (s *Stack) Push(v interface{}) {
 			return
 		}
 	}
-}
-
-type stackitem struct {
-	next unsafe.Pointer
-	v    interface{}
 }
