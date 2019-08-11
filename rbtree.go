@@ -84,9 +84,8 @@ func (t *RBTree) Put(key, value interface{}) {
 					node.left = new
 					insertedNode = node.left
 					break LOOP
-				} else {
-					node = node.left
 				}
+				node = node.left
 			case t.less(node.k, key):
 				if node.right == nil {
 					node.right = new

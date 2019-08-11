@@ -137,20 +137,30 @@ func TestRBTreeNoEqual(t *testing.T) {
 	}
 }
 
-func BenchmarkRBTree(b *testing.B) {
-	for size := 0; size < 1000; size += 10 {
+func BenchmarkRBTree_Put(b *testing.B) {
+	count := 0
+	grow := 1
+	for size := 0; size < 100000; size += 1 * grow {
+		if count%10 == 0 {
+			count = 1
+			grow *= 10
+		}
 		b.Run(fmt.Sprintf("size-%d", size), func(b *testing.B) {
+			// prepare problem size
 			tree := lockfree.NewRBTree(func(a, b interface{}) bool {
 				if a.(int) < b.(int) {
 					return true
 				}
 				return false
 			})
+			for n := 0; n < size-1; n++ {
+				tree.Put(n, n)
+			}
+			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				for n := 0; n < size; n++ {
-					tree.Put(n, n)
-				}
+				tree.Put(size, size) // only measure the last operation
 			}
 		})
+		count++
 	}
 }
