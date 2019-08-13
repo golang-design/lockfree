@@ -11,13 +11,15 @@ type SkipList struct {
 	header   *skiplistitem
 	len      int
 	MaxLevel int
+	less     Less
 }
 
 // NewSkipList returns a skiplist.
-func NewSkipList() *SkipList {
+func NewSkipList(less Less) *SkipList {
 	return &SkipList{
 		header:   &skiplistitem{forward: []*skiplistitem{nil}},
 		MaxLevel: 32,
+		less:     less,
 	}
 }
 
@@ -27,12 +29,12 @@ func (s *SkipList) Len() int {
 }
 
 // Set sets given k and v pair into the skiplist.
-func (s *SkipList) Set(k Comparator, v interface{}) {
+func (s *SkipList) Set(k interface{}, v interface{}) {
 	// s.level starts from 0, we need to allocate one
 	update := make([]*skiplistitem, s.level()+1, s.effectiveMaxLevel()+1) // make(type, len, cap)
 
 	x := s.path(s.header, update, k)
-	if x != nil && x.k == k { // if key exist, update
+	if x != nil && (s.less(x.k, k) || s.less(x.k, k)) { // if key exist, update
 		x.v = v
 		return
 	}
@@ -58,10 +60,10 @@ func (s *SkipList) Set(k Comparator, v interface{}) {
 	s.len++
 }
 
-func (s *SkipList) path(x *skiplistitem, update []*skiplistitem, k Comparator) (candidate *skiplistitem) {
+func (s *SkipList) path(x *skiplistitem, update []*skiplistitem, k interface{}) (candidate *skiplistitem) {
 	depth := len(x.forward) - 1
 	for i := depth; i >= 0; i-- {
-		for x.forward[i] != nil && x.forward[i].k.Less(k) {
+		for x.forward[i] != nil && s.less(x.forward[i].k, k) {
 			x = x.forward[i]
 		}
 		if update != nil {
@@ -78,16 +80,16 @@ func (s *SkipList) randomLevel() (n int) {
 }
 
 // Get returns corresponding v with given k.
-func (s *SkipList) Get(k Comparator) (v interface{}, ok bool) {
+func (s *SkipList) Get(k interface{}) (v interface{}, ok bool) {
 	x := s.path(s.header, nil, k)
-	if x == nil || x.k != k {
+	if x == nil || (s.less(x.k, k) || s.less(x.k, k)) {
 		return nil, false
 	}
 	return x.v, true
 }
 
 // Search returns true if k is founded in the skiplist.
-func (s *SkipList) Search(k Comparator) (ok bool) {
+func (s *SkipList) Search(k interface{}) (ok bool) {
 	x := s.path(s.header, nil, k)
 	if x != nil {
 		ok = true
@@ -97,9 +99,9 @@ func (s *SkipList) Search(k Comparator) (ok bool) {
 }
 
 // Range interates `from` to `to` with `op`.
-func (s *SkipList) Range(from, to Comparator, op func(v interface{})) {
+func (s *SkipList) Range(from, to interface{}, op func(v interface{})) {
 	for start := s.path(s.header, nil, from); start.next() != nil; start = start.next() {
-		if !start.k.Less(to) {
+		if !s.less(start.k, to) {
 			return
 		}
 
@@ -108,11 +110,11 @@ func (s *SkipList) Range(from, to Comparator, op func(v interface{})) {
 }
 
 // Del returns the deleted value if ok
-func (s *SkipList) Del(k Comparator) (v interface{}, ok bool) {
+func (s *SkipList) Del(k interface{}) (v interface{}, ok bool) {
 	update := make([]*skiplistitem, s.level()+1, s.effectiveMaxLevel())
 
 	x := s.path(s.header, update, k)
-	if x == nil || x.k != k {
+	if x == nil || (s.less(x.k, k) || s.less(x.k, k)) {
 		ok = false
 		return
 	}
@@ -142,7 +144,7 @@ func (s *SkipList) effectiveMaxLevel() int {
 
 type skiplistitem struct {
 	forward []*skiplistitem
-	k       Comparator
+	k       interface{}
 	v       interface{}
 }
 
@@ -151,9 +153,4 @@ func (s *skiplistitem) next() *skiplistitem {
 		return nil
 	}
 	return s.forward[0]
-}
-
-// Comparator defines comparator interface
-type Comparator interface {
-	Less(v interface{}) bool
 }

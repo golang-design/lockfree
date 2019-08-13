@@ -50,14 +50,12 @@ func (n *rbnode) maximumNode() *rbnode {
 }
 
 // RBTree is a red-black tree
+// TODO: FIXME: This implementation is not a non-blocking implementation.
 type RBTree struct {
 	root *rbnode
 	len  int
 	less Less
 }
-
-// Less returns true if a < b
-type Less func(a, b interface{}) bool
 
 // NewRBTree creates a red-black tree
 func NewRBTree(less Less) *RBTree {

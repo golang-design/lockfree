@@ -5,6 +5,10 @@ import (
 	"unsafe"
 )
 
+// Less defines a function that compares the order of a and b.
+// Returns true if a < b
+type Less func(a, b interface{}) bool
+
 type directItem struct {
 	next unsafe.Pointer
 	v    interface{}
