@@ -6,6 +6,7 @@ import "math/rand"
 // It support insertion, lookup, and deletion operations with O(log n) time complexity
 // Paper: Pugh, William (June 1990). "Skip lists: a probabilistic alternative to balanced
 // trees". Communications of the ACM 33 (6): 668–676
+// TODO: FIXME: This implementation is not a non-blocking implementation.
 type SkipList struct {
 	header   *skiplistitem
 	len      int
