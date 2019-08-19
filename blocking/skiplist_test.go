@@ -1,13 +1,13 @@
-package lockfree_test
+package blocking_test
 
 import (
 	"testing"
 
-	"github.com/changkun/lockfree"
+	"github.com/changkun/lockfree/blocking"
 )
 
-func newSkipList() *lockfree.SkipList {
-	return lockfree.NewSkipList(func(a, b interface{}) bool {
+func newSkipList() *blocking.SkipList {
+	return blocking.NewSkipList(func(a, b interface{}) bool {
 		if a.(int) < b.(int) {
 			return true
 		}

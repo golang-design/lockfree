@@ -1,21 +1,24 @@
-package lockfree
+package blocking
 
-import "math/rand"
+import (
+	"math/rand"
+
+	"github.com/changkun/lockfree/common"
+)
 
 // A SkipList maintains an ordered collection of key:valkue pairs.
 // It support insertion, lookup, and deletion operations with O(log n) time complexity
 // Paper: Pugh, William (June 1990). "Skip lists: a probabilistic alternative to balanced
 // trees". Communications of the ACM 33 (6): 668–676
-// TODO: FIXME: This implementation is not a non-blocking implementation.
 type SkipList struct {
 	header   *skiplistitem
 	len      int
 	MaxLevel int
-	less     Less
+	less     common.Less
 }
 
 // NewSkipList returns a skiplist.
-func NewSkipList(less Less) *SkipList {
+func NewSkipList(less common.Less) *SkipList {
 	return &SkipList{
 		header:   &skiplistitem{forward: []*skiplistitem{nil}},
 		MaxLevel: 32,

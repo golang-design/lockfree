@@ -1,9 +1,11 @@
-package lockfree
+package blocking
+
+import "github.com/changkun/lockfree/common"
 
 // BinarySearch implements binary search algorithm.
 // It returns the index if element x is found in arr
 // Otherwise it returns -1.
-func BinarySearch(arr []interface{}, x interface{}, less Less) int {
+func BinarySearch(arr []interface{}, x interface{}, less common.Less) int {
 	l, r := 0, len(arr)-1
 	for l <= r {
 		mid := (l + r) / 2

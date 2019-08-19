@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/changkun/lockfree"
+	"github.com/changkun/lockfree/blocking"
 )
 
 func TestQueueDequeueEmpty(t *testing.T) {
@@ -57,28 +58,23 @@ type queueInterface interface {
 }
 
 type mutexQueue struct {
-	v  []interface{}
+	q  *blocking.Queue
 	mu sync.Mutex
 }
 
 func newMutexQueue() *mutexQueue {
-	return &mutexQueue{v: make([]interface{}, 0)}
+	return &mutexQueue{q: blocking.NewQueue()}
 }
 
 func (q *mutexQueue) Enqueue(v interface{}) {
 	q.mu.Lock()
-	q.v = append(q.v, v)
+	q.q.Enqueue(v)
 	q.mu.Unlock()
 }
 
 func (q *mutexQueue) Dequeue() interface{} {
 	q.mu.Lock()
-	if len(q.v) == 0 {
-		q.mu.Unlock()
-		return nil
-	}
-	v := q.v[0]
-	q.v = q.v[1:]
+	v := q.q.Dequeue()
 	q.mu.Unlock()
 	return v
 }

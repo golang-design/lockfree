@@ -6,7 +6,7 @@ all:
 	@echo "  - make bench count=<number>: run all benches with given count"
 
 tests:
-	go test -race -cover -coverprofile=cover.test -v .
+	go test -race -cover -coverprofile=cover.test -v ./...
 	go tool cover -html=cover.test -o cover.html
 
 bench:

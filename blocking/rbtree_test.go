@@ -1,11 +1,11 @@
-package lockfree_test
+package blocking_test
 
 import (
 	"fmt"
 	"math/rand"
 	"testing"
 
-	"github.com/changkun/lockfree"
+	"github.com/changkun/lockfree/blocking"
 )
 
 type UniqueRand struct {
@@ -36,7 +36,7 @@ func check(arr []int) {
 }
 
 func TestRBTreeWithEqual(t *testing.T) {
-	tree := lockfree.NewRBTree(func(a, b interface{}) bool {
+	tree := blocking.NewRBTree(func(a, b interface{}) bool {
 		if a.(int) < b.(int) {
 			return true
 		}
@@ -87,7 +87,7 @@ func TestRBTreeNoEqual(t *testing.T) {
 	N := 1000
 	for i := 0; i < N; i++ {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			tree := lockfree.NewRBTree(func(a, b interface{}) bool {
+			tree := blocking.NewRBTree(func(a, b interface{}) bool {
 				if a.(int) < b.(int) {
 					return true
 				}
@@ -147,7 +147,7 @@ func BenchmarkRBTree_Put(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("size-%d", size), func(b *testing.B) {
 			// prepare problem size
-			tree := lockfree.NewRBTree(func(a, b interface{}) bool {
+			tree := blocking.NewRBTree(func(a, b interface{}) bool {
 				if a.(int) < b.(int) {
 					return true
 				}

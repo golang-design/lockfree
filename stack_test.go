@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/changkun/lockfree"
+	"github.com/changkun/lockfree/blocking"
 )
 
 func TestStackPopEmpty(t *testing.T) {
@@ -40,24 +41,23 @@ type stackInterface interface {
 }
 
 type mutexStack struct {
-	v  []interface{}
+	s  *blocking.Stack
 	mu sync.Mutex
 }
 
 func newMutexStack() *mutexStack {
-	return &mutexStack{v: make([]interface{}, 0)}
+	return &mutexStack{s: blocking.NewStack()}
 }
 
 func (s *mutexStack) Push(v interface{}) {
 	s.mu.Lock()
-	s.v = append(s.v, v)
+	s.s.Push(v)
 	s.mu.Unlock()
 }
 
 func (s *mutexStack) Pop() interface{} {
 	s.mu.Lock()
-	v := s.v[len(s.v)]
-	s.v = s.v[:len(s.v)-1]
+	v := s.s.Pop()
 	s.mu.Unlock()
 	return v
 }

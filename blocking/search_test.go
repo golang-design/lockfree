@@ -1,16 +1,17 @@
-package lockfree_test
+package blocking_test
 
 import (
 	"testing"
 
-	"github.com/changkun/lockfree"
+	"github.com/changkun/lockfree/blocking"
+	"github.com/changkun/lockfree/common"
 )
 
 func TestBinarySearch(t *testing.T) {
 	tests := []struct {
 		input []interface{}
 		x     interface{}
-		less  lockfree.Less
+		less  common.Less
 		want  int
 	}{
 		{
@@ -49,7 +50,7 @@ func TestBinarySearch(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		r := lockfree.BinarySearch(tt.input, tt.x, tt.less)
+		r := blocking.BinarySearch(tt.input, tt.x, tt.less)
 		if r != tt.want {
 			t.Fatalf("BinarySearch %v of %v: want %v, got %v", tt.x, tt.input, tt.want, r)
 		}

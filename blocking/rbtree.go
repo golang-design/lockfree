@@ -1,6 +1,10 @@
-package lockfree
+package blocking
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/changkun/lockfree/common"
+)
 
 type color uint32
 
@@ -50,15 +54,14 @@ func (n *rbnode) maximumNode() *rbnode {
 }
 
 // RBTree is a red-black tree
-// TODO: FIXME: This implementation is not a non-blocking implementation.
 type RBTree struct {
 	root *rbnode
 	len  int
-	less Less
+	less common.Less
 }
 
 // NewRBTree creates a red-black tree
-func NewRBTree(less Less) *RBTree {
+func NewRBTree(less common.Less) *RBTree {
 	return &RBTree{less: less}
 }
 
