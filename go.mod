@@ -1,3 +1,3 @@
-module github.com/changkun/lockfree
+module golang.design/x/lockfree
 
-go 1.12
+go 1.13
