@@ -5,6 +5,7 @@
 package lockfree
 
 import (
+	"sync"
 	"sync/atomic"
 	"unsafe"
 )
@@ -15,6 +16,7 @@ type Queue struct {
 	head unsafe.Pointer
 	tail unsafe.Pointer
 	len  uint64
+	pool sync.Pool
 }
 
 // NewQueue creates a new lock-free queue.
@@ -23,12 +25,20 @@ func NewQueue() *Queue {
 	return &Queue{
 		tail: unsafe.Pointer(&head), // both head and tail points
 		head: unsafe.Pointer(&head), // to the free item
+		pool: sync.Pool{
+			New: func() interface{} {
+				return &directItem{}
+			},
+		},
 	}
 }
 
 // Enqueue puts the given value v at the tail of the queue.
 func (q *Queue) Enqueue(v interface{}) {
-	i := &directItem{next: nil, v: v} // allocate new item
+	i := q.pool.Get().(*directItem)
+	i.next = nil
+	i.v = v
+
 	var last, lastnext *directItem
 	for {
 		last = loaditem(&q.tail)
@@ -65,6 +75,7 @@ func (q *Queue) Dequeue() interface{} {
 				v := firstnext.v
 				if casitem(&q.head, first, firstnext) { // try to swing head to the next node
 					atomic.AddUint64(&q.len, ^uint64(0))
+					q.pool.Put(first)
 					return v // queue was not empty and dequeue finished.
 				}
 			}
