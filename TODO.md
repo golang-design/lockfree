@@ -28,8 +28,24 @@ are in [REFERENCES.md](REFERENCES.md):
 - `wf.RingBuffer[T]`: wait-free bounded SPSC
 - `AddFloat64`: lock-free
 
-The papers below remain open as future implementations or as alternative
-variants of structures already shipped.
+The papers below remain open. They fall into three groups, none of which adds a
+non-blocking guarantee or ADT the package does not already provide:
+
+- **Alternative variants of a shipped ADT (low marginal value).** Valois's
+  lock-free list, the Shann/Fober/Evequoz queues, and the Fomitchev-Ruppert
+  skip list are different constructions of structures already shipped (lock-free
+  list, queue, and skip list). They would add implementation variety, not a new
+  capability.
+- **Bounded MPMC ring (Tsigas-Zhang): attempted, deferred.** The one genuine
+  capability gap, a lock-free bounded MPMC FIFO. The attempt is not faithful yet
+  (see the Queue section below); shipping it would violate the project's rule
+  that every claimed guarantee be verified, so it is held back rather than
+  shipped buggy.
+- **Research-grade concurrent trees (high effort).** The Bronson BST,
+  Braginsky-Petrank B+ tree, and Kim lock-free red-black tree are large,
+  subtle algorithms. The package already offers ordered, logarithmic structures
+  (`lf.SkipList`/`lf.OrderedMap` lock-free, `wf.Map` wait-free), so these are
+  deferred as future depth, not a coverage gap.
 
 ## List of Algorithms
 
@@ -45,6 +61,7 @@ variants of structures already shipped.
 - [ ] Shann, Chien-Hua, Ting-Lu Huang, and Cheng Chen. "A practical nonblocking queue algorithm using compare-and-swap." Proceedings Seventh International Conference on Parallel and Distributed Systems (Cat. No. PR00568). IEEE, 2000. [PDF](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.199.7928&rep=rep1&type=pdf)
 - [ ] Fober, Dominique, Yann Orlarey, and Stéphane Letz. "Optimised lock-free FIFO queue." (2001). [PDF](https://hal.archives-ouvertes.fr/hal-02158792/document)
 - [ ] Evequoz, Claude. "Non-blocking concurrent fifo queues with single word synchronization primitives." 2008 37th International Conference on Parallel Processing. IEEE, 2008. [PDF](https://www.liblfds.org/downloads/white%20papers/%5BQueue%5D%20-%20%5BEvequoz%5D%20-%20Non-Blocking%20Concurrent%20FIFO%20Queues%20With%20Single%20Word%20Synchroniation%20Primitives.pdf)
+- [ ] Tsigas, Philippas, and Yi Zhang. "A simple, fast and scalable non-blocking concurrent FIFO queue for shared memory multiprocessor systems." Proceedings of the thirteenth annual ACM symposium on Parallel algorithms and architectures (SPAA '01). 2001. **Deferred: attempted as a lock-free bounded MPMC ring (`lf.RingBuffer`).** The port's control flow matches Figures 6 and 7 and passes single-threaded and single-producer tests, but under concurrent producers it both reorders a producer's own values (a later `Put` fills a transient hole behind the real tail) and strands values (a `Put` lands on or behind the head gap cell), failing conservation and per-producer FIFO. Four permutations of the core mechanism (m = 1/2 x restore-same/restore-opposite) all failed, which indicates the lag invariant is not being maintained rather than a single typo. The likely gap is the two-NULL re-encoding: the paper appears to select the empty marker positionally at dequeue time, whereas the attempt baked the choice into each entry at enqueue time. The published algorithm is sound; deferred pending a verified, faithful port. The abandoned attempt lives on the `lf-mpmc-ring` branch, not on master. [PDF](https://www.cse.chalmers.se/~tsigas/papers/latest-spaa01.pdf)
 
 ### Skip-list
 
