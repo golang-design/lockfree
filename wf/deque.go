@@ -16,16 +16,20 @@ import "sync/atomic"
 // The sequential object is a deque represented persistently as an immutable,
 // height-balanced (AVL) binary tree whose in-order sequence is the deque from
 // front to back (Okasaki, "Purely Functional Data Structures", 1998, for the
-// persistent-structure approach). Applying an operation copies only the O(log n)
-// nodes on the path from the root to the affected end and shares the rest, so
-// each operation node stores the resulting tree and its response as a pure
-// function of its predecessor's tree. This keeps every operation O(log n).
+// persistent-structure approach). Applying one operation copies only the
+// O(log n) nodes on the path from the root to the affected end and shares the
+// rest, so each operation node stores the resulting tree and its response as a
+// pure function of its predecessor's tree. Each applied operation is therefore
+// an O(log n) tree update.
 //
 // Unlike the wait-free Queue and Stack, whose operations are O(maxHandles) and
-// independent of size, this deque is O(log n) in the number of elements. That
-// size dependence appears to be inherent to wait-free deques (the dedicated
-// state-of-the-art of Wang et al., OPODIS 2023, is also polylogarithmic in the
-// size), so this is a genuine bound rather than an artifact of the construction.
+// independent of size, this deque is O(maxHandles * log n): the helping loop runs
+// up to O(maxHandles) rounds and each round may apply one O(log n) tree update
+// (the stack collapses to O(maxHandles) only because its apply is O(1)). The
+// log n size dependence appears to be inherent to wait-free deques (the dedicated
+// state of the art, Asbell & Ruppert, "A Wait-Free Deque With Polylogarithmic
+// Step Complexity", OPODIS 2023, is also polylogarithmic in the size), so it is a
+// genuine bound rather than an artifact of the construction.
 
 type dequeOp int8
 
@@ -160,8 +164,9 @@ type dequeNode[T any] struct {
 // participant helps append announced operations in round-robin order, so any
 // announced operation is linked within a bounded number of steps (O(maxHandles))
 // regardless of scheduling. There are no locks and no operation waits on
-// another's completion. Each operation costs O(maxHandles) helping steps plus an
-// O(log n) persistent-tree update, where n is the number of elements.
+// another's completion. Each operation costs O(maxHandles * log n): up to
+// O(maxHandles) helping rounds, each of which may apply one O(log n)
+// persistent-tree update, where n is the number of elements.
 //
 // Memory reclamation relies on Go's garbage collector. The construction keeps no
 // permanent reference to the head of the operation list: the per-participant

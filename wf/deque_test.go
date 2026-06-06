@@ -45,8 +45,9 @@ func TestNewDequeInvalid(t *testing.T) {
 // It pushes and immediately pops many finalized values, then forces GC and
 // asserts most values are finalized. If the history were pinned (for example by
 // a fixed sentinel reference or non-advancing cursors), the persistent-tree
-// versions would keep the values alive and few finalizers would run. It mixes
-// both ends so the tree-rebalancing paths run while the history is reclaimed.
+// versions would keep the values alive and few finalizers would run. It
+// alternates ends so both push/pop paths are exercised (tree balancing itself is
+// covered by the white-box TestPersistentDequeTree).
 func TestDequeReclamation(t *testing.T) {
 	const m = 20000
 	var finalized atomic.Int64
