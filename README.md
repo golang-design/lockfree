@@ -87,8 +87,12 @@ numbers do not:
 
 Illustrative numbers (ns/op, lower is better) on an Apple M2 (8 cores), Go
 1.26.1. The `g=1` column is single-threaded latency; `g=8`/`g=32` are per-op time
-under parallelism (so a value that *drops* from `g=1` to `g=8` is scaling with
-cores). Reproduce with `go test -run '^$' -bench=. -benchmem ./...`.
+under parallelism. Read them differently per kind: a stack, queue, or deque is a
+single contention point that cannot scale a shared LIFO/FIFO past one core, so
+the axis there is **flat vs rising** (flat means contention is absorbed, rising
+means it degrades). The maps have independent keys, so there the axis is
+**dropping ns/op = scaling with cores**. Reproduce with
+`go test -run '^$' -bench=. -benchmem ./...`.
 
 | ns/op | g=1 | g=8 | g=32 |
 |-------|----:|----:|-----:|
