@@ -3,14 +3,19 @@
 ## Status
 
 Implemented and genuinely non-blocking (see each type's doc comment for its
-precise progress guarantee and the tests that exercise it under `-race`):
+precise progress guarantee and the tests that exercise it under `-race`). They
+are organized by guarantee into the `lf` (lock-free) and `wf` (wait-free)
+subpackages, and a shared conformance suite verifies every implementation of an
+ADT behaves identically:
 
-- `Stack[T]`: lock-free (Treiber)
-- `Queue[T]`: lock-free (Michael & Scott)
-- `RingBuffer[T]`: wait-free bounded SPSC
-- `SkipList[K,V]` / `OrderedMap[K,V]`: lock-free (Herlihy & Shavit, marked
+- `lf.Stack[T]`: lock-free (Treiber)
+- `lf.Queue[T]`: lock-free (Michael & Scott)
+- `lf.SkipList[K,V]` / `lf.OrderedMap[K,V]`: lock-free (Herlihy & Shavit, marked
   pointers); this also covers the "provably correct scalable concurrent skip
   list" line below in textbook lock-free form
+- `wf.Queue[T]`: wait-free (Kogan & Petrank)
+- `wf.Stack[T]`: wait-free (Herlihy's universal construction)
+- `wf.RingBuffer[T]`: wait-free bounded SPSC
 - `AddFloat64`: lock-free
 
 The papers below remain open as future implementations or as alternative

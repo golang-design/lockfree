@@ -13,7 +13,8 @@
 //     tolerate occasional retries. Stack, Queue, SkipList, OrderedMap.
 //   - lockfree/wf holds the wait-free structures: every operation completes in a
 //     bounded number of its own steps regardless of scheduling (no starvation),
-//     at a higher constant cost. RingBuffer (SPSC), Queue (Kogan & Petrank).
+//     at a higher constant cost. RingBuffer (SPSC), Queue (Kogan & Petrank),
+//     Stack (Herlihy's universal construction).
 //
 // Wait-free is strictly stronger than lock-free, so a wait-free type is also
 // lock-free; the wf package exists to give a bounded-latency choice where that

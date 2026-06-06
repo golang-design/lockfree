@@ -25,6 +25,7 @@ Each structure documents its *precise* guarantee rather than a blanket
 | `lf` | `SkipList[K,V]` | lock-free (`Get`/`Search` wait-free) | Herlihy & Shavit, marked pointers |
 | `lf` | `OrderedMap[K,V]` | lock-free | backed by `SkipList` |
 | `wf` | `Queue[T]` | wait-free | Kogan & Petrank |
+| `wf` | `Stack[T]` | wait-free | Herlihy universal construction |
 | `wf` | `RingBuffer[T]` | wait-free, **bounded SPSC** (one producer, one consumer) | array + cursors |
 | (root) | `AddFloat64` | lock-free | atomic CAS loop |
 
@@ -45,13 +46,14 @@ h := q.Handle()                      // one Handle per goroutine
 h.Enqueue(1)
 ```
 
-The wait-free queue needs participants to register, because its helping mechanism
-is indexed by a participant id and Go has no goroutine id. Acquire one `Handle`
-per goroutine, up to `maxHandles`; the slots are not reclaimable, so this fits a
-bounded, long-lived worker pool. Each operation is O(`maxHandles`). Both queues
-satisfy the shared `lockfree.Queue[T]` interface, but the swap is not symmetric:
-on the `wf` side it is the per-goroutine `Handle`, not the `Queue` value, that
-satisfies it.
+The wait-free `Queue` and `Stack` need participants to register, because their
+helping mechanism is indexed by a participant id and Go has no goroutine id.
+Acquire one handle per goroutine, up to `maxHandles`; the slots are not
+reclaimable, so this fits a bounded, long-lived worker pool. Each operation is
+O(`maxHandles`). Both the lock-free and wait-free queues satisfy the shared
+`lockfree.Queue[T]` interface (and likewise for stacks), but the swap is not
+symmetric: on the `wf` side it is the per-goroutine handle, not the `Queue` or
+`Stack` value, that satisfies the interface.
 
 ### Verification
 
