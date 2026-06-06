@@ -7,7 +7,7 @@ package lf
 import "golang.design/x/lockfree"
 
 // OrderedMap is a lock-free ordered map: it keeps key/value pairs sorted by key
-// and supports concurrent Put, Get, Del and ordered Range.
+// and supports concurrent Set, Get, Del and ordered Range.
 //
 // It replaces the package's former red-black tree, which was sequential despite
 // claiming to be non-blocking. A fully lock-free balanced binary search tree is
@@ -15,7 +15,7 @@ import "golang.design/x/lockfree"
 // lock-free SkipList instead, which delivers the same ordered-map API with the
 // same O(log n) expected complexity and a genuine lock-free progress guarantee.
 //
-// Progress guarantee: lock-free for Put/Del, wait-free for Get (inherited from
+// Progress guarantee: lock-free for Set/Del, wait-free for Get (inherited from
 // SkipList). Len and Range are weakly consistent under concurrency. See SkipList
 // for the detailed argument.
 type OrderedMap[K, V any] struct {
@@ -27,8 +27,8 @@ func NewOrderedMap[K, V any](less lockfree.Less[K]) *OrderedMap[K, V] {
 	return &OrderedMap[K, V]{sl: NewSkipList[K, V](less)}
 }
 
-// Put stores value v under key k, replacing any existing value.
-func (m *OrderedMap[K, V]) Put(k K, v V) { m.sl.Set(k, v) }
+// Set stores value v under key k, replacing any existing value.
+func (m *OrderedMap[K, V]) Set(k K, v V) { m.sl.Set(k, v) }
 
 // Get returns the value stored under key k and whether it was found.
 func (m *OrderedMap[K, V]) Get(k K) (v V, ok bool) { return m.sl.Get(k) }

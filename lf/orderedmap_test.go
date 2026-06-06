@@ -29,7 +29,7 @@ func TestOrderedMap_PutGetDel(t *testing.T) {
 	}
 
 	for i := 0; i <= 5; i++ {
-		m.Put(i, i*100)
+		m.Set(i, i*100)
 	}
 	if m.Len() != 6 {
 		t.Fatalf("Len after 6 Puts: got %d, want 6", m.Len())
@@ -38,7 +38,7 @@ func TestOrderedMap_PutGetDel(t *testing.T) {
 		t.Fatalf("Get(3): got (%v,%v), want (300,true)", v, ok)
 	}
 
-	m.Put(1, 999) // overwrite
+	m.Set(1, 999) // overwrite
 	if v, ok := m.Get(1); !ok || v != 999 {
 		t.Fatalf("Get(1) after overwrite: got (%v,%v), want (999,true)", v, ok)
 	}
@@ -58,7 +58,7 @@ func TestOrderedMap_RangeOrdered(t *testing.T) {
 	m := newOrderedMap()
 	// Insert in shuffled order; Range must still yield ascending keys.
 	for _, k := range []int{7, 2, 9, 0, 5, 3, 8, 1, 6, 4} {
-		m.Put(k, k)
+		m.Set(k, k)
 	}
 	want := 2
 	m.Range(2, 8, func(k, v int) {
@@ -87,7 +87,7 @@ func TestOrderedMap_Concurrent(t *testing.T) {
 			defer wg.Done()
 			r := rand.New(rand.NewPCG(uint64(base)+1, 0x9e3779b9))
 			for i := 0; i < perWorker; i++ {
-				m.Put(base+i, base+i)
+				m.Set(base+i, base+i)
 			}
 			for i := 0; i < perWorker; i++ {
 				if r.IntN(2) == 0 {
