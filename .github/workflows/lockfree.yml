@@ -44,6 +44,8 @@ jobs:
         go-version: '1.26'
     - name: Fuzz skip list (lock-free)
       run: go test -run '^$' -fuzz=FuzzSkipList -fuzztime=120s ./lf
+    - name: Fuzz deque (lock-free)
+      run: go test -run '^$' -fuzz=FuzzDeque -fuzztime=120s ./lf
     - name: Fuzz queue (wait-free)
       run: go test -run '^$' -fuzz=FuzzQueue -fuzztime=120s ./wf
     - name: Fuzz stack (wait-free)

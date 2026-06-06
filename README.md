@@ -23,6 +23,7 @@ Each structure documents its *precise* guarantee rather than a blanket
 | `lf` | `Stack[T]` | lock-free | Treiber |
 | `lf` | `EliminationStack[T]` | lock-free | Hendler, Shavit & Yerushalmi (elimination backoff) |
 | `lf` | `Queue[T]` | lock-free | Michael & Scott |
+| `lf` | `Deque[T]` | lock-free | Sundell & Tsigas (doubly linked, single-word CAS) |
 | `lf` | `SkipList[K,V]` | lock-free (`Get`/`Search` wait-free) | Herlihy & Shavit, marked pointers |
 | `lf` | `OrderedMap[K,V]` | lock-free | backed by `SkipList` |
 | `lf` | `List[K,V]` | lock-free | Harris & Michael ordered list |

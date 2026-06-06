@@ -10,8 +10,8 @@
 //
 //   - lockfree/lf holds the lock-free structures: some operation always makes
 //     system-wide progress with no locks, faster in the common case, callers
-//     tolerate occasional retries. Stack, EliminationStack, Queue, SkipList,
-//     OrderedMap, List, HashMap, SplitHashMap.
+//     tolerate occasional retries. Stack, EliminationStack, Queue, Deque,
+//     SkipList, OrderedMap, List, HashMap, SplitHashMap.
 //   - lockfree/wf holds the wait-free structures: every operation completes in a
 //     bounded number of its own steps regardless of scheduling (no starvation),
 //     at a higher constant cost. RingBuffer (SPSC), Queue (Kogan & Petrank),
@@ -22,8 +22,8 @@
 // matters (real-time, SLO-sensitive paths).
 //
 // This root package itself holds only guarantee-neutral pieces: the ADT
-// contracts (Queue, Stack, Map) that both subpackages implement and that a
-// single conformance suite verifies; the Less comparator; BinarySearch; and
+// contracts (Queue, Stack, Deque, Map) that both subpackages implement and that
+// a single conformance suite verifies; the Less comparator; BinarySearch; and
 // AddFloat64.
 //
 // The race detector verifies memory safety but cannot prove a progress

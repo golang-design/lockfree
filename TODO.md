@@ -11,6 +11,7 @@ ADT behaves identically:
 - `lf.Stack[T]`: lock-free (Treiber)
 - `lf.EliminationStack[T]`: lock-free (Hendler, Shavit & Yerushalmi elimination)
 - `lf.Queue[T]`: lock-free (Michael & Scott)
+- `lf.Deque[T]`: lock-free (Sundell & Tsigas, doubly linked, single-word CAS)
 - `lf.SkipList[K,V]` / `lf.OrderedMap[K,V]`: lock-free (Herlihy & Shavit, marked
   pointers); this also covers the "provably correct scalable concurrent skip
   list" line below in textbook lock-free form
@@ -30,7 +31,7 @@ variants of structures already shipped.
 ### Linked List
 
 - [x] Harris, Timothy L. "A pragmatic implementation of non-blocking linked-lists." International Symposium on Distributed Computing. Springer, Berlin, Heidelberg, 2001. [PDF](https://pdfs.semanticscholar.org/68a9/005a5ec10daece36ca5ecb9cad7be44770b1.pdf)
-- [ ] Sundell, Hakan, and Philippas Tsigas. "Lock-Free and Practical Deques and Doubly Linked Lists using Single-Word Compare-And-Swap." 2004 [PDF](https://pdfs.semanticscholar.org/8a68/f45bd32ed050a96faa24139ab71178258f13.pdf)
+- [x] Sundell, Hakan, and Philippas Tsigas. "Lock-Free and Practical Deques and Doubly Linked Lists using Single-Word Compare-And-Swap." 2004 (Implemented as `lf.Deque[T]`.) [PDF](https://pdfs.semanticscholar.org/8a68/f45bd32ed050a96faa24139ab71178258f13.pdf)
 - [ ] Valois, John D. "Lock-free linked lists using compare-and-swap." PODC. Vol. 95. 1995. [PDF](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.41.9506&rep=rep1&type=pdf)
 
 ### Queue
