@@ -5,13 +5,13 @@
 Implemented and genuinely non-blocking (see each type's doc comment for its
 precise progress guarantee and the tests that exercise it under `-race`):
 
-- `Stack[T]` — lock-free (Treiber)
-- `Queue[T]` — lock-free (Michael & Scott)
-- `RingBuffer[T]` — wait-free bounded SPSC
-- `SkipList[K,V]` / `OrderedMap[K,V]` — lock-free (Herlihy & Shavit, marked
+- `Stack[T]`: lock-free (Treiber)
+- `Queue[T]`: lock-free (Michael & Scott)
+- `RingBuffer[T]`: wait-free bounded SPSC
+- `SkipList[K,V]` / `OrderedMap[K,V]`: lock-free (Herlihy & Shavit, marked
   pointers); this also covers the "provably correct scalable concurrent skip
   list" line below in textbook lock-free form
-- `AddFloat64` — lock-free
+- `AddFloat64`: lock-free
 
 The papers below remain open as future implementations or as alternative
 variants of structures already shipped.

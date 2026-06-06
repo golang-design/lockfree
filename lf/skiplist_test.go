@@ -211,7 +211,7 @@ func TestSkipList_Concurrent(t *testing.T) {
 
 // TestSkipList_ContendedSameKey hammers a small shared keyspace from many
 // goroutines with random Set/Del/Get so that concurrent operations collide on
-// the SAME key — the paths that disjoint-key tests never reach (two Sets racing
+// the SAME key, the paths that disjoint-key tests never reach (two Sets racing
 // one absent key, two Dels racing one present key, Set/Del helping in find).
 // The winner of any race is nondeterministic, so it asserts only invariants
 // that must hold regardless: keys stay strictly ascending (no duplicate nodes,

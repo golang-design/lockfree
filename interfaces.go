@@ -11,8 +11,8 @@ package lockfree
 // implementation of the same ADT.
 //
 // Note the wait-free side is not always a symmetric drop-in: a wait-free MPMC
-// queue requires participants to register, so it is wf's per-goroutine Handle —
-// not the wf.Queue value itself — that satisfies Queue. See package wf.
+// queue requires participants to register, so it is wf's per-goroutine Handle
+// (not the wf.Queue value itself) that satisfies Queue. See package wf.
 
 // Queue is a first-in-first-out queue. Satisfied by *lf.Queue[T] and by
 // *wf.Handle[T].

@@ -26,7 +26,7 @@ Each structure documents its *precise* progress guarantee rather than a blanket
 *Wait-free* means every operation finishes in a bounded number of its own steps;
 *lock-free* means the system as a whole always makes progress with no locks and
 no operation waiting on another. The race detector checks memory safety but
-cannot prove these guarantees — the argument for each is in its doc comment, and
+cannot prove these guarantees; the argument for each is in its doc comment, and
 correctness is exercised by conservation/differential/contention tests under
 `-race`.
 

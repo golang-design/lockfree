@@ -17,7 +17,7 @@ import "sync/atomic"
 // Memory reclamation relies on Go's garbage collector: a dequeued node stays
 // alive as long as any goroutine still holds a reference, which prevents the
 // classic ABA hazard without hazard pointers. Nodes are intentionally not
-// pooled — recycling them would defeat that protection.
+// pooled, because recycling them would defeat that protection.
 type Queue[T any] struct {
 	head atomic.Pointer[directItem[T]]
 	tail atomic.Pointer[directItem[T]]

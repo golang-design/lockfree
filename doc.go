@@ -8,10 +8,10 @@
 //
 // The implementations live in two subpackages:
 //
-//   - lockfree/lf — lock-free structures: some operation always makes
+//   - lockfree/lf holds the lock-free structures: some operation always makes
 //     system-wide progress with no locks, faster in the common case, callers
 //     tolerate occasional retries. Stack, Queue, SkipList, OrderedMap.
-//   - lockfree/wf — wait-free structures: every operation completes in a
+//   - lockfree/wf holds the wait-free structures: every operation completes in a
 //     bounded number of its own steps regardless of scheduling (no starvation),
 //     at a higher constant cost. RingBuffer (SPSC), Queue (Kogan & Petrank).
 //

@@ -19,7 +19,7 @@ const skiplistMaxLevel = 31
 // SkipList is a lock-free ordered map keyed by K with values V.
 //
 // It implements the lock-free skip list of Herlihy & Shavit ("The Art of
-// Multiprocessor Programming") — the variant built on Harris-style marked
+// Multiprocessor Programming"), the variant built on Harris-style marked
 // next-pointers at every level, NOT the optimistic per-node-lock variant.
 //
 // Progress guarantee: lock-free. Insert (Set) and delete (Del) are CAS loops
