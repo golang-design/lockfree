@@ -5,8 +5,8 @@
 package lf_test
 
 import (
+	"container/list"
 	"sync"
-	"sync/atomic"
 	"testing"
 
 	"golang.design/x/lockfree"
@@ -25,70 +25,83 @@ func TestDequeConformance(t *testing.T) {
 	})
 }
 
-// mutexDeque is a mutex-guarded slice deque used as the benchmark baseline.
+// mutexDeque is a mutex-guarded doubly linked list used as the benchmark
+// baseline. container/list gives O(1) operations at both ends, so the lock is
+// the only thing being compared (a naive slice deque would prepend in O(n) and
+// unfairly flatter the lock-free version once prefilled).
 type mutexDeque struct {
-	v  []int
+	l  list.List
 	mu sync.Mutex
 }
 
 func (d *mutexDeque) PushFront(x int) {
 	d.mu.Lock()
-	d.v = append([]int{x}, d.v...)
+	d.l.PushFront(x)
 	d.mu.Unlock()
 }
 
 func (d *mutexDeque) PushBack(x int) {
 	d.mu.Lock()
-	d.v = append(d.v, x)
+	d.l.PushBack(x)
 	d.mu.Unlock()
 }
 
 func (d *mutexDeque) PopFront() (int, bool) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	if len(d.v) == 0 {
+	e := d.l.Front()
+	if e == nil {
 		return 0, false
 	}
-	x := d.v[0]
-	d.v = d.v[1:]
-	return x, true
+	d.l.Remove(e)
+	return e.Value.(int), true
 }
 
 func (d *mutexDeque) PopBack() (int, bool) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	if len(d.v) == 0 {
+	e := d.l.Back()
+	if e == nil {
 		return 0, false
 	}
-	x := d.v[len(d.v)-1]
-	d.v = d.v[:len(d.v)-1]
-	return x, true
+	d.l.Remove(e)
+	return e.Value.(int), true
 }
 
 // BenchmarkDeque compares the lock-free deque against a mutex-guarded deque
-// under contention, cycling all four operations across goroutines on both ends.
+// under a balanced workload swept across goroutine counts. Each goroutine cycles
+// PushFront, PushBack, PopFront, PopBack with a local counter (no shared
+// op-selector), and the deque is prefilled so pops mostly succeed.
 func BenchmarkDeque(b *testing.B) {
+	const prefill = 1024
 	impls := []struct {
 		name string
-		d    lockfree.Deque[int]
+		make func() lockfree.Deque[int]
 	}{
-		{"lockfree", lf.NewDeque[int]()},
-		{"mutex", &mutexDeque{}},
+		{"mutex", func() lockfree.Deque[int] { return &mutexDeque{} }},
+		{"lockfree", func() lockfree.Deque[int] { return lf.NewDeque[int]() }},
 	}
 	for _, impl := range impls {
 		b.Run(impl.name, func(b *testing.B) {
-			var c int64
-			b.RunParallel(func(pb *testing.PB) {
-				for pb.Next() {
-					switch atomic.AddInt64(&c, 1) & 3 {
-					case 0:
-						impl.d.PushFront(1)
-					case 1:
-						impl.d.PushBack(1)
-					case 2:
-						impl.d.PopFront()
-					default:
-						impl.d.PopBack()
+			runSweep(b, func(int) func(*testing.PB) {
+				d := impl.make()
+				for i := 0; i < prefill; i++ {
+					d.PushBack(i)
+				}
+				return func(pb *testing.PB) {
+					var n uint
+					for pb.Next() {
+						switch n & 3 {
+						case 0:
+							d.PushFront(1)
+						case 1:
+							d.PushBack(1)
+						case 2:
+							d.PopFront()
+						default:
+							d.PopBack()
+						}
+						n++
 					}
 				}
 			})
