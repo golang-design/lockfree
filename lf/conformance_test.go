@@ -21,6 +21,7 @@ var (
 	_ lockfree.Map[int, int] = (*lf.OrderedMap[int, int])(nil)
 	_ lockfree.Map[int, int] = (*lf.List[int, int])(nil)
 	_ lockfree.Map[int, int] = (*lf.HashMap[int, int])(nil)
+	_ lockfree.Map[int, int] = (*lf.SplitHashMap[int, int])(nil)
 )
 
 // hashInt spreads int keys across buckets (Fibonacci hashing).
@@ -76,6 +77,11 @@ func TestMapConformance(t *testing.T) {
 	t.Run("HashMap", func(t *testing.T) {
 		conformtest.Map(t, func() lockfree.Map[int, int] {
 			return lf.NewHashMap[int, int](64, hashInt, func(a, b int) bool { return a < b })
+		})
+	})
+	t.Run("SplitHashMap", func(t *testing.T) {
+		conformtest.Map(t, func() lockfree.Map[int, int] {
+			return lf.NewSplitHashMap[int, int](hashInt, func(a, b int) bool { return a < b })
 		})
 	})
 }
