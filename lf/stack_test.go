@@ -2,7 +2,7 @@
 // All rights reserved. Use of this source code is governed
 // by a MIT license that can be found in the LICENSE file.
 
-package lockfree_test
+package lf_test
 
 import (
 	"fmt"
@@ -10,11 +10,11 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"golang.design/x/lockfree"
+	"golang.design/x/lockfree/lf"
 )
 
 func TestStackPopEmpty(t *testing.T) {
-	s := lockfree.NewStack[int]()
+	s := lf.NewStack[int]()
 	if v, ok := s.Pop(); ok {
 		t.Fatalf("pop empty stack returns ok, got %v", v)
 	}
@@ -24,7 +24,7 @@ func TestStackPopEmpty(t *testing.T) {
 }
 
 func TestStackPushPop(t *testing.T) {
-	s := lockfree.NewStack[int]()
+	s := lf.NewStack[int]()
 	for i := 0; i < 100; i++ {
 		s.Push(i)
 	}
@@ -43,7 +43,7 @@ func TestStackPushPop(t *testing.T) {
 }
 
 func ExampleStack() {
-	s := lockfree.NewStack[int]()
+	s := lf.NewStack[int]()
 
 	s.Push(1)
 	s.Push(2)
@@ -68,7 +68,7 @@ func ExampleStack() {
 func TestStackConcurrent(t *testing.T) {
 	const producers = 8
 	const perProducer = 10000
-	s := lockfree.NewStack[int]()
+	s := lf.NewStack[int]()
 
 	var wg sync.WaitGroup
 	wg.Add(producers)
@@ -157,7 +157,7 @@ func BenchmarkStack(b *testing.B) {
 		name string
 		s    stackInterface
 	}{
-		{"lockfree", lockfree.NewStack[int]()},
+		{"lockfree", lf.NewStack[int]()},
 		{"mutex", newMutexStack()},
 	}
 	for _, impl := range impls {

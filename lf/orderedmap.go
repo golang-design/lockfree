@@ -2,7 +2,9 @@
 // All rights reserved. Use of this source code is governed
 // by a MIT license that can be found in the LICENSE file.
 
-package lockfree
+package lf
+
+import "golang.design/x/lockfree"
 
 // OrderedMap is a lock-free ordered map: it keeps key/value pairs sorted by key
 // and supports concurrent Put, Get, Del and ordered Range.
@@ -21,7 +23,7 @@ type OrderedMap[K, V any] struct {
 }
 
 // NewOrderedMap returns an empty ordered map keyed by K and ordered by less.
-func NewOrderedMap[K, V any](less Less[K]) *OrderedMap[K, V] {
+func NewOrderedMap[K, V any](less lockfree.Less[K]) *OrderedMap[K, V] {
 	return &OrderedMap[K, V]{sl: NewSkipList[K, V](less)}
 }
 

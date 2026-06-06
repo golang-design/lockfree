@@ -2,11 +2,13 @@
 // All rights reserved. Use of this source code is governed
 // by a MIT license that can be found in the LICENSE file.
 
-package lockfree
+package lf
 
 import (
 	"math/rand/v2"
 	"sync/atomic"
+
+	"golang.design/x/lockfree"
 )
 
 // skiplistMaxLevel is the highest level index a node may occupy; the list
@@ -38,7 +40,7 @@ type SkipList[K, V any] struct {
 	head     *skipnode[K, V]
 	maxLevel int
 	length   atomic.Uint64
-	lessFn   Less[K]
+	lessFn   lockfree.Less[K]
 }
 
 // skipnode is a skip list node. kind is -1 for the head sentinel, +1 for the
@@ -105,7 +107,7 @@ func (m *markableRef[K, V]) attemptMark(expectRef *skipnode[K, V], newMark bool)
 }
 
 // NewSkipList returns an empty lock-free skip list ordered by less.
-func NewSkipList[K, V any](less Less[K]) *SkipList[K, V] {
+func NewSkipList[K, V any](less lockfree.Less[K]) *SkipList[K, V] {
 	maxLevel := skiplistMaxLevel
 	tail := &skipnode[K, V]{kind: 1, topLevel: maxLevel}
 	tail.nexts = make([]*markableRef[K, V], maxLevel+1)

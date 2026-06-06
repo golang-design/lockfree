@@ -2,12 +2,12 @@
 // All rights reserved. Use of this source code is governed
 // by a MIT license that can be found in the LICENSE file.
 
-package lockfree_test
+package lf_test
 
 import (
 	"testing"
 
-	"golang.design/x/lockfree"
+	"golang.design/x/lockfree/lf"
 )
 
 // FuzzSkipList differentially fuzzes the lock-free skip list against a plain map
@@ -21,7 +21,7 @@ func FuzzSkipList(f *testing.F) {
 	f.Add([]byte{0, 1, 1, 0, 2, 2, 0, 3, 3, 1, 2, 0})
 
 	f.Fuzz(func(t *testing.T, data []byte) {
-		sl := lockfree.NewSkipList[int, int](func(a, b int) bool { return a < b })
+		sl := lf.NewSkipList[int, int](func(a, b int) bool { return a < b })
 		ref := map[int]int{}
 
 		for i := 0; i+2 < len(data); i += 3 {

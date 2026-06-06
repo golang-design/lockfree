@@ -2,7 +2,7 @@
 // All rights reserved. Use of this source code is governed
 // by a MIT license that can be found in the LICENSE file.
 
-package lockfree_test
+package lf_test
 
 import (
 	"math/rand/v2"
@@ -10,11 +10,11 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"golang.design/x/lockfree"
+	"golang.design/x/lockfree/lf"
 )
 
-func newSkipList() *lockfree.SkipList[int, int] {
-	return lockfree.NewSkipList[int, int](func(a, b int) bool { return a < b })
+func newSkipList() *lf.SkipList[int, int] {
+	return lf.NewSkipList[int, int](func(a, b int) bool { return a < b })
 }
 
 func TestSkipList_Len(t *testing.T) {

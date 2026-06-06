@@ -2,18 +2,18 @@
 // All rights reserved. Use of this source code is governed
 // by a MIT license that can be found in the LICENSE file.
 
-package lockfree_test
+package lf_test
 
 import (
 	"math/rand/v2"
 	"sync"
 	"testing"
 
-	"golang.design/x/lockfree"
+	"golang.design/x/lockfree/lf"
 )
 
-func newOrderedMap() *lockfree.OrderedMap[int, int] {
-	return lockfree.NewOrderedMap[int, int](func(a, b int) bool { return a < b })
+func newOrderedMap() *lf.OrderedMap[int, int] {
+	return lf.NewOrderedMap[int, int](func(a, b int) bool { return a < b })
 }
 
 func TestOrderedMap_PutGetDel(t *testing.T) {
