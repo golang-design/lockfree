@@ -16,6 +16,7 @@ ADT behaves identically:
   list" line below in textbook lock-free form
 - `lf.List[K,V]`: lock-free ordered list-based map (Harris / Michael)
 - `lf.HashMap[K,V]`: lock-free hash table (Michael, fixed bucket count)
+- `lf.SplitHashMap[K,V]`: lock-free resizable hash table (Shalev & Shavit split-ordered lists)
 - `wf.Queue[T]`: wait-free (Kogan & Petrank)
 - `wf.Stack[T]`: wait-free (Herlihy's universal construction)
 - `wf.RingBuffer[T]`: wait-free bounded SPSC

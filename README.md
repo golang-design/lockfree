@@ -27,6 +27,7 @@ Each structure documents its *precise* guarantee rather than a blanket
 | `lf` | `OrderedMap[K,V]` | lock-free | backed by `SkipList` |
 | `lf` | `List[K,V]` | lock-free | Harris & Michael ordered list |
 | `lf` | `HashMap[K,V]` | lock-free | Michael (bucketed lists, fixed size) |
+| `lf` | `SplitHashMap[K,V]` | lock-free | Shalev & Shavit split-ordered (resizable) |
 | `wf` | `Queue[T]` | wait-free | Kogan & Petrank |
 | `wf` | `Stack[T]` | wait-free | Herlihy universal construction |
 | `wf` | `RingBuffer[T]` | wait-free, **bounded SPSC** (one producer, one consumer) | array + cursors |
