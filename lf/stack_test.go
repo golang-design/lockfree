@@ -119,12 +119,6 @@ func TestStackConcurrent(t *testing.T) {
 	}
 }
 
-// stackInterface lets the benchmark drive both implementations identically.
-type stackInterface interface {
-	Push(int)
-	Pop() (int, bool)
-}
-
 type mutexStack struct {
 	v  []int
 	mu sync.Mutex
