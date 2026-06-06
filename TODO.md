@@ -1,5 +1,21 @@
 # TODO LIST
 
+## Status
+
+Implemented and genuinely non-blocking (see each type's doc comment for its
+precise progress guarantee and the tests that exercise it under `-race`):
+
+- `Stack[T]` — lock-free (Treiber)
+- `Queue[T]` — lock-free (Michael & Scott)
+- `RingBuffer[T]` — wait-free bounded SPSC
+- `SkipList[K,V]` / `OrderedMap[K,V]` — lock-free (Herlihy & Shavit, marked
+  pointers); this also covers the "provably correct scalable concurrent skip
+  list" line below in textbook lock-free form
+- `AddFloat64` — lock-free
+
+The papers below remain open as future implementations or as alternative
+variants of structures already shipped.
+
 ## List of Algorithms
 
 ### Linked List
@@ -18,7 +34,7 @@
 ### Skip-list
 
 - [ ] Fomitchev, Mikhail, and Eric Ruppert. "Lock-free linked lists and skip lists." Proceedings of the twenty-third annual ACM symposium on Principles of distributed computing. ACM, 2004. [PDF](http://people.scs.carleton.ca/~edwardduong/PDF_files_of_relevant_papers/2004%20-%20Lock-free%20Linked%20List%20and%20Skip%20Lists.pdf)
-- [ ] Herlihy, Maurice, et al. "A provably correct scalable concurrent skip list." Conference On Principles of Distributed Systems (OPODIS). 2006. [PDF](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.170.719&rep=rep1&type=pdf)
+- [x] Herlihy, Maurice, et al. "A provably correct scalable concurrent skip list." Conference On Principles of Distributed Systems (OPODIS). 2006. (Implemented as `SkipList[K,V]` in the textbook lock-free, marked-pointer form.) [PDF](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.170.719&rep=rep1&type=pdf)
 
 ### Stack
 
