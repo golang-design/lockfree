@@ -50,6 +50,8 @@ jobs:
       run: go test -run '^$' -fuzz=FuzzQueue -fuzztime=120s ./wf
     - name: Fuzz stack (wait-free)
       run: go test -run '^$' -fuzz=FuzzStack -fuzztime=120s ./wf
+    - name: Fuzz deque (wait-free)
+      run: go test -run '^$' -fuzz=FuzzDeque -fuzztime=120s ./wf
 
   bench:
     name: Benchmark

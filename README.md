@@ -31,6 +31,7 @@ Each structure documents its *precise* guarantee rather than a blanket
 | `lf` | `SplitHashMap[K,V]` | lock-free | Shalev & Shavit split-ordered (resizable) |
 | `wf` | `Queue[T]` | wait-free | Kogan & Petrank |
 | `wf` | `Stack[T]` | wait-free | Herlihy universal construction |
+| `wf` | `Deque[T]` | wait-free, **O(maxHandles · log n)** (size-dependent, not O(maxHandles) like Queue/Stack) | Herlihy universal construction over a persistent AVL tree |
 | `wf` | `RingBuffer[T]` | wait-free, **bounded SPSC** (one producer, one consumer) | array + cursors |
 | (root) | `AddFloat64` | lock-free | atomic CAS loop |
 
@@ -54,14 +55,20 @@ h := q.Handle()                      // one Handle per goroutine
 h.Enqueue(1)
 ```
 
-The wait-free `Queue` and `Stack` need participants to register, because their
-helping mechanism is indexed by a participant id and Go has no goroutine id.
-Acquire one handle per goroutine, up to `maxHandles`; the slots are not
-reclaimable, so this fits a bounded, long-lived worker pool. Each operation is
-O(`maxHandles`). Both the lock-free and wait-free queues satisfy the shared
-`lockfree.Queue[T]` interface (and likewise for stacks), but the swap is not
-symmetric: on the `wf` side it is the per-goroutine handle, not the `Queue` or
-`Stack` value, that satisfies the interface.
+The wait-free `Queue`, `Stack`, and `Deque` need participants to register,
+because their helping mechanism is indexed by a participant id and Go has no
+goroutine id. Acquire one handle per goroutine, up to `maxHandles`; the slots are
+not reclaimable, so this fits a bounded, long-lived worker pool. The queue and
+stack are O(`maxHandles`) per operation. The `Deque` is the exception: it is
+O(`maxHandles` · log n) in the element count, because it is the universal
+construction over a persistent balanced tree rather than a specialized algorithm.
+That size dependence appears inherent to wait-free deques (the dedicated state of
+the art is also polylogarithmic in size), so a wait-free `Deque` is not a free
+peer of the queue and stack, do not reach for it expecting their size-independent
+bound. Both the lock-free and wait-free queues satisfy the shared
+`lockfree.Queue[T]` interface (and likewise for stacks and deques), but the swap
+is not symmetric: on the `wf` side it is the per-goroutine handle, not the
+`Queue`, `Stack`, or `Deque` value, that satisfies the interface.
 
 ### Performance
 
