@@ -19,7 +19,11 @@ var (
 	_ lockfree.Map[int, int] = (*lf.SkipList[int, int])(nil)
 	_ lockfree.Map[int, int] = (*lf.OrderedMap[int, int])(nil)
 	_ lockfree.Map[int, int] = (*lf.List[int, int])(nil)
+	_ lockfree.Map[int, int] = (*lf.HashMap[int, int])(nil)
 )
+
+// hashInt spreads int keys across buckets (Fibonacci hashing).
+func hashInt(k int) uint64 { return uint64(k) * 0x9e3779b97f4a7c15 }
 
 // TestQueueConformance runs the shared FIFO-queue conformance suite against the
 // lock-free Michael & Scott queue. A lock-free queue has unbounded participants,
@@ -57,6 +61,11 @@ func TestMapConformance(t *testing.T) {
 	t.Run("List", func(t *testing.T) {
 		conformtest.Map(t, func() lockfree.Map[int, int] {
 			return lf.NewList[int, int](func(a, b int) bool { return a < b })
+		})
+	})
+	t.Run("HashMap", func(t *testing.T) {
+		conformtest.Map(t, func() lockfree.Map[int, int] {
+			return lf.NewHashMap[int, int](64, hashInt, func(a, b int) bool { return a < b })
 		})
 	})
 }
