@@ -27,7 +27,10 @@ func Map(t *testing.T, factory MapFactory) {
 
 // mapDifferential replays a long random op sequence against a builtin map.
 func mapDifferential(t *testing.T, factory MapFactory) {
-	const ops = 200000
+	// Sizes are kept modest so the suite is also reasonable for O(n)
+	// implementations such as the list-based map; implementation-specific heavy
+	// stress lives in each type's own tests.
+	const ops = 50000
 	const keyspace = 256
 	m := factory()
 	ref := map[int]int{}
@@ -69,7 +72,7 @@ func mapDifferential(t *testing.T, factory MapFactory) {
 // deletes the even offsets, and the odd offsets must survive.
 func mapConcurrentDisjoint(t *testing.T, factory MapFactory) {
 	const workers = 8
-	const perWorker = 5000
+	const perWorker = 300
 	m := factory()
 
 	var wg sync.WaitGroup

@@ -18,6 +18,7 @@ var (
 	_ lockfree.Stack[int]    = (*lf.Stack[int])(nil)
 	_ lockfree.Map[int, int] = (*lf.SkipList[int, int])(nil)
 	_ lockfree.Map[int, int] = (*lf.OrderedMap[int, int])(nil)
+	_ lockfree.Map[int, int] = (*lf.List[int, int])(nil)
 )
 
 // TestQueueConformance runs the shared FIFO-queue conformance suite against the
@@ -51,6 +52,11 @@ func TestMapConformance(t *testing.T) {
 	t.Run("OrderedMap", func(t *testing.T) {
 		conformtest.Map(t, func() lockfree.Map[int, int] {
 			return lf.NewOrderedMap[int, int](func(a, b int) bool { return a < b })
+		})
+	})
+	t.Run("List", func(t *testing.T) {
+		conformtest.Map(t, func() lockfree.Map[int, int] {
+			return lf.NewList[int, int](func(a, b int) bool { return a < b })
 		})
 	})
 }
