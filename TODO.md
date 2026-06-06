@@ -6,7 +6,8 @@ Implemented and genuinely non-blocking (see each type's doc comment for its
 precise progress guarantee and the tests that exercise it under `-race`). They
 are organized by guarantee into the `lf` (lock-free) and `wf` (wait-free)
 subpackages, and a shared conformance suite verifies every implementation of an
-ADT behaves identically:
+ADT behaves identically. Full academic citations for each implemented algorithm
+are in [REFERENCES.md](REFERENCES.md):
 
 - `lf.Stack[T]`: lock-free (Treiber)
 - `lf.EliminationStack[T]`: lock-free (Hendler, Shavit & Yerushalmi elimination)

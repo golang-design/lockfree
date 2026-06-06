@@ -40,6 +40,9 @@ with no locks and no operation waiting on another. Wait-free is strictly stronge
 than lock-free, so the `wf` variants trade a higher constant factor for a
 bounded-latency guarantee.
 
+Every algorithm is a port of a published, peer-reviewed result; see
+[REFERENCES.md](REFERENCES.md) for the full citation of each.
+
 ### Choosing a guarantee
 
 ```go
