@@ -4,23 +4,16 @@
 
 package lockfree
 
-import (
-	"sync/atomic"
-	"unsafe"
-)
+import "sync/atomic"
 
 // Less defines a function that compares the order of a and b.
-// Returns true if a < b
-type Less func(a, b interface{}) bool
+// It returns true if a < b.
+type Less[T any] func(a, b T) bool
 
-type directItem struct {
-	next unsafe.Pointer
-	v    interface{}
-}
-
-func loaditem(p *unsafe.Pointer) *directItem {
-	return (*directItem)(atomic.LoadPointer(p))
-}
-func casitem(p *unsafe.Pointer, old, new *directItem) bool {
-	return atomic.CompareAndSwapPointer(p, unsafe.Pointer(old), unsafe.Pointer(new))
+// directItem is a singly-linked node shared by the lock-free Stack and Queue.
+// Its next pointer is accessed atomically so concurrent operations can link
+// and unlink nodes with compare-and-swap.
+type directItem[T any] struct {
+	next atomic.Pointer[directItem[T]]
+	v    T
 }

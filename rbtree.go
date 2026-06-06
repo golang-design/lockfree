@@ -58,11 +58,11 @@ func (n *rbnode) maximumNode() *rbnode {
 type RBTree struct {
 	root *rbnode
 	len  int
-	less Less
+	less Less[any]
 }
 
 // NewRBTree creates a red-black tree
-func NewRBTree(less Less) *RBTree {
+func NewRBTree(less Less[any]) *RBTree {
 	return &RBTree{less: less}
 }
 

@@ -4,50 +4,55 @@
 
 package lockfree
 
-import (
-	"sync/atomic"
-	"unsafe"
-)
+import "sync/atomic"
 
-// Stack implements lock-free freelist based stack.
-type Stack struct {
-	top unsafe.Pointer
-	len uint64
+// Stack is a lock-free LIFO stack (Treiber stack).
+//
+// Progress guarantee: lock-free. Push and Pop are CAS loops over the top
+// pointer; on a failed CAS each retries against the freshly loaded top, and no
+// operation ever waits on another's completion. Go's garbage collector keeps a
+// popped node alive while any goroutine still references it, which is what makes
+// the bare compare-and-swap safe from use-after-free here.
+type Stack[T any] struct {
+	top atomic.Pointer[directItem[T]]
+	len atomic.Uint64
 }
 
-// NewStack creates a new lock-free queue.
-func NewStack() *Stack {
-	return &Stack{}
+// NewStack creates a new lock-free stack.
+func NewStack[T any]() *Stack[T] {
+	return &Stack[T]{}
 }
 
-// Pop pops value from the top of the stack.
-func (s *Stack) Pop() interface{} {
-	var top, next unsafe.Pointer
-	var item *directItem
+// Pop removes and returns the value at the top of the stack.
+// The second return value is false if the stack is empty.
+func (s *Stack[T]) Pop() (v T, ok bool) {
 	for {
-		top = atomic.LoadPointer(&s.top)
+		top := s.top.Load()
 		if top == nil {
-			return nil
+			return v, false
 		}
-		item = (*directItem)(top)
-		next = atomic.LoadPointer(&item.next)
-		if atomic.CompareAndSwapPointer(&s.top, top, next) {
-			atomic.AddUint64(&s.len, ^uint64(0))
-			return item.v
+		next := top.next.Load()
+		if s.top.CompareAndSwap(top, next) {
+			s.len.Add(^uint64(0))
+			return top.v, true
 		}
 	}
 }
 
 // Push pushes a value on top of the stack.
-func (s *Stack) Push(v interface{}) {
-	item := directItem{v: v}
-	var top unsafe.Pointer
+func (s *Stack[T]) Push(v T) {
+	item := &directItem[T]{v: v}
 	for {
-		top = atomic.LoadPointer(&s.top)
-		item.next = top
-		if atomic.CompareAndSwapPointer(&s.top, top, unsafe.Pointer(&item)) {
-			atomic.AddUint64(&s.len, 1)
+		top := s.top.Load()
+		item.next.Store(top)
+		if s.top.CompareAndSwap(top, item) {
+			s.len.Add(1)
 			return
 		}
 	}
+}
+
+// Length returns the number of elements currently in the stack.
+func (s *Stack[T]) Length() uint64 {
+	return s.len.Load()
 }

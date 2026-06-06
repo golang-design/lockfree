@@ -6,7 +6,6 @@ package lockfree_test
 
 import (
 	"fmt"
-	"math/rand"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -15,14 +14,14 @@ import (
 )
 
 func TestQueueDequeueEmpty(t *testing.T) {
-	q := lockfree.NewQueue()
-	if q.Dequeue() != nil {
-		t.Fatalf("dequeue empty queue returns non-nil")
+	q := lockfree.NewQueue[int]()
+	if v, ok := q.Dequeue(); ok {
+		t.Fatalf("dequeue empty queue returns ok, got %v", v)
 	}
 }
 
 func TestQueue_Length(t *testing.T) {
-	q := lockfree.NewQueue()
+	q := lockfree.NewQueue[int]()
 	if q.Length() != 0 {
 		t.Fatalf("empty queue has non-zero length")
 	}
@@ -32,22 +31,38 @@ func TestQueue_Length(t *testing.T) {
 		t.Fatalf("count of enqueue wrong, want %d, got %d.", 1, q.Length())
 	}
 
-	q.Dequeue()
+	if v, ok := q.Dequeue(); !ok || v != 1 {
+		t.Fatalf("dequeue: got (%v, %v), want (1, true)", v, ok)
+	}
 	if q.Length() != 0 {
 		t.Fatalf("count of dequeue wrong, want %d, got %d", 0, q.Length())
 	}
 }
 
+func TestQueueFIFO(t *testing.T) {
+	q := lockfree.NewQueue[int]()
+	for i := 0; i < 100; i++ {
+		q.Enqueue(i)
+	}
+	for i := 0; i < 100; i++ {
+		v, ok := q.Dequeue()
+		if !ok || v != i {
+			t.Fatalf("dequeue: got (%v, %v), want (%d, true)", v, ok, i)
+		}
+	}
+}
+
 func ExampleQueue() {
-	q := lockfree.NewQueue()
+	q := lockfree.NewQueue[string]()
 
 	q.Enqueue("1st item")
 	q.Enqueue("2nd item")
 	q.Enqueue("3rd item")
 
-	fmt.Println(q.Dequeue())
-	fmt.Println(q.Dequeue())
-	fmt.Println(q.Dequeue())
+	for i := 0; i < 3; i++ {
+		v, _ := q.Dequeue()
+		fmt.Println(v)
+	}
 
 	// Output:
 	// 1st item
@@ -55,58 +70,112 @@ func ExampleQueue() {
 	// 3rd item
 }
 
+// TestQueueConcurrent stresses the queue with concurrent producers and
+// consumers and asserts item conservation. Run with -race for memory safety.
+func TestQueueConcurrent(t *testing.T) {
+	const producers = 8
+	const perProducer = 10000
+	q := lockfree.NewQueue[int]()
+
+	var wg sync.WaitGroup
+	wg.Add(producers)
+	for p := 0; p < producers; p++ {
+		go func() {
+			defer wg.Done()
+			for i := 0; i < perProducer; i++ {
+				q.Enqueue(1)
+			}
+		}()
+	}
+
+	var dequeued int64
+	var cg sync.WaitGroup
+	cg.Add(producers)
+	done := make(chan struct{})
+	for c := 0; c < producers; c++ {
+		go func() {
+			defer cg.Done()
+			for {
+				if _, ok := q.Dequeue(); ok {
+					atomic.AddInt64(&dequeued, 1)
+					continue
+				}
+				select {
+				case <-done:
+					if _, ok := q.Dequeue(); ok {
+						atomic.AddInt64(&dequeued, 1)
+						continue
+					}
+					return
+				default:
+				}
+			}
+		}()
+	}
+
+	wg.Wait()
+	close(done)
+	cg.Wait()
+
+	if want := int64(producers * perProducer); dequeued != want {
+		t.Fatalf("conservation violated: dequeued %d, want %d", dequeued, want)
+	}
+	if got := q.Length(); got != 0 {
+		t.Fatalf("length after drain: got %d, want 0", got)
+	}
+}
+
+// queueInterface lets the benchmark drive both implementations identically.
 type queueInterface interface {
-	Enqueue(interface{})
-	Dequeue() interface{}
+	Enqueue(int)
+	Dequeue() (int, bool)
 }
 
 type mutexQueue struct {
-	v  []interface{}
+	v  []int
 	mu sync.Mutex
 }
 
 func newMutexQueue() *mutexQueue {
-	return &mutexQueue{v: make([]interface{}, 0)}
+	return &mutexQueue{v: make([]int, 0)}
 }
 
-func (q *mutexQueue) Enqueue(v interface{}) {
+func (q *mutexQueue) Enqueue(v int) {
 	q.mu.Lock()
 	q.v = append(q.v, v)
 	q.mu.Unlock()
 }
 
-func (q *mutexQueue) Dequeue() interface{} {
+func (q *mutexQueue) Dequeue() (int, bool) {
 	q.mu.Lock()
+	defer q.mu.Unlock()
 	if len(q.v) == 0 {
-		q.mu.Unlock()
-		return nil
+		return 0, false
 	}
 	v := q.v[0]
 	q.v = q.v[1:]
-	q.mu.Unlock()
-	return v
+	return v, true
 }
 
+// BenchmarkQueue compares the lock-free queue against a mutex-guarded queue
+// under contention, alternating Enqueue and Dequeue across all goroutines.
 func BenchmarkQueue(b *testing.B) {
-	length := 1 << 12
-	inputs := make([]int, length)
-	for i := 0; i < length; i++ {
-		inputs = append(inputs, rand.Int())
+	impls := []struct {
+		name string
+		q    queueInterface
+	}{
+		{"lockfree", lockfree.NewQueue[int]()},
+		{"mutex", newMutexQueue()},
 	}
-	q, mq := lockfree.NewQueue(), newMutexQueue()
-	b.ResetTimer()
-
-	for _, q := range [...]queueInterface{q, mq} {
-		b.Run(fmt.Sprintf("%T", q), func(b *testing.B) {
+	for _, impl := range impls {
+		b.Run(impl.name, func(b *testing.B) {
 			var c int64
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
-					i := int(atomic.AddInt64(&c, 1)-1) % length
-					v := inputs[i]
-					if v >= 0 {
-						q.Enqueue(v)
+					if atomic.AddInt64(&c, 1)&1 == 0 {
+						impl.q.Enqueue(1)
 					} else {
-						q.Dequeue()
+						impl.q.Dequeue()
 					}
 				}
 			})

@@ -4,10 +4,10 @@
 
 package lockfree
 
-// BinarySearch implements binary search algorithm.
-// It returns the index if element x is found in arr
+// BinarySearch implements the binary search algorithm.
+// It returns the index if element x is found in arr, sorted by less.
 // Otherwise it returns -1.
-func BinarySearch(arr []interface{}, x interface{}, less Less) int {
+func BinarySearch[T any](arr []T, x T, less Less[T]) int {
 	l, r := 0, len(arr)-1
 	for l <= r {
 		mid := (l + r) / 2

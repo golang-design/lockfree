@@ -15,11 +15,11 @@ type SkipList struct {
 	header   *skiplistitem
 	len      int
 	MaxLevel int
-	less     Less
+	less     Less[any]
 }
 
 // NewSkipList returns a skiplist.
-func NewSkipList(less Less) *SkipList {
+func NewSkipList(less Less[any]) *SkipList {
 	return &SkipList{
 		header:   &skiplistitem{forward: []*skiplistitem{nil}},
 		MaxLevel: 32,

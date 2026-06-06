@@ -4,86 +4,80 @@
 
 package lockfree
 
-import (
-	"sync"
-	"sync/atomic"
-	"unsafe"
-)
+import "sync/atomic"
 
-// Queue implements lock-free FIFO freelist based queue.
+// Queue is a lock-free FIFO queue (Michael & Scott, PODC 1996).
 // ref: https://dl.acm.org/citation.cfm?doid=248052.248106
-type Queue struct {
-	head unsafe.Pointer
-	tail unsafe.Pointer
-	len  uint64
-	pool sync.Pool
+//
+// Progress guarantee: lock-free. Enqueue and Dequeue retry CAS loops that
+// always reload head/tail/next before acting and help advance a lagging tail
+// rather than waiting on the goroutine that left it behind, so a stalled
+// operation never blocks the others.
+//
+// Memory reclamation relies on Go's garbage collector: a dequeued node stays
+// alive as long as any goroutine still holds a reference, which prevents the
+// classic ABA hazard without hazard pointers. Nodes are intentionally not
+// pooled — recycling them would defeat that protection.
+type Queue[T any] struct {
+	head atomic.Pointer[directItem[T]]
+	tail atomic.Pointer[directItem[T]]
+	len  atomic.Uint64
 }
 
 // NewQueue creates a new lock-free queue.
-func NewQueue() *Queue {
-	head := directItem{next: nil, v: nil} // allocate a free item
-	return &Queue{
-		tail: unsafe.Pointer(&head), // both head and tail points
-		head: unsafe.Pointer(&head), // to the free item
-		pool: sync.Pool{
-			New: func() interface{} {
-				return &directItem{}
-			},
-		},
-	}
+func NewQueue[T any]() *Queue[T] {
+	sentinel := &directItem[T]{} // allocate a free (dummy) item
+	q := &Queue[T]{}
+	q.head.Store(sentinel) // both head and tail point
+	q.tail.Store(sentinel) // to the free item
+	return q
 }
 
 // Enqueue puts the given value v at the tail of the queue.
-func (q *Queue) Enqueue(v interface{}) {
-	i := q.pool.Get().(*directItem)
-	i.next = nil
-	i.v = v
-
-	var last, lastnext *directItem
+func (q *Queue[T]) Enqueue(v T) {
+	i := &directItem[T]{v: v}
 	for {
-		last = loaditem(&q.tail)
-		lastnext = loaditem(&last.next)
-		if loaditem(&q.tail) == last { // are tail and next consistent?
+		last := q.tail.Load()
+		lastnext := last.next.Load()
+		if last == q.tail.Load() { // are tail and next consistent?
 			if lastnext == nil { // was tail pointing to the last node?
-				if casitem(&last.next, lastnext, i) { // try to link item at the end of linked list
-					casitem(&q.tail, last, i) // enqueue is done. try swing tail to the inserted node
-					atomic.AddUint64(&q.len, 1)
+				if last.next.CompareAndSwap(nil, i) { // link item at the end of the list
+					q.tail.CompareAndSwap(last, i) // try to swing tail to the inserted node
+					q.len.Add(1)
 					return
 				}
 			} else { // tail was not pointing to the last node
-				casitem(&q.tail, last, lastnext) // try swing tail to the next node
+				q.tail.CompareAndSwap(last, lastnext) // try to swing tail to the next node
 			}
 		}
 	}
 }
 
 // Dequeue removes and returns the value at the head of the queue.
-// It returns nil if the queue is empty.
-func (q *Queue) Dequeue() interface{} {
-	var first, last, firstnext *directItem
+// The second return value is false if the queue is empty.
+func (q *Queue[T]) Dequeue() (v T, ok bool) {
 	for {
-		first = loaditem(&q.head)
-		last = loaditem(&q.tail)
-		firstnext = loaditem(&first.next)
-		if first == loaditem(&q.head) { // are head, tail and next consistent?
-			if first == last { // is queue empty?
+		first := q.head.Load()
+		last := q.tail.Load()
+		firstnext := first.next.Load()
+		if first == q.head.Load() { // are head, tail and next consistent?
+			if first == last { // is queue empty or tail falling behind?
 				if firstnext == nil { // queue is empty, couldn't dequeue
-					return nil
+					return v, false
 				}
-				casitem(&q.tail, last, firstnext) // tail is falling behind, try to advance it
-			} else { // read value before cas, otherwise another dequeue might free the next node
+				q.tail.CompareAndSwap(last, firstnext) // tail is falling behind, advance it
+			} else { // read value before CAS, otherwise another dequeue might reuse next
 				v := firstnext.v
-				if casitem(&q.head, first, firstnext) { // try to swing head to the next node
-					atomic.AddUint64(&q.len, ^uint64(0))
-					q.pool.Put(first)
-					return v // queue was not empty and dequeue finished.
+				if q.head.CompareAndSwap(first, firstnext) { // swing head to the next node
+					q.len.Add(^uint64(0))
+					return v, true
 				}
 			}
 		}
 	}
 }
 
-// Length returns the length of the queue.
-func (q *Queue) Length() uint64 {
-	return atomic.LoadUint64(&q.len)
+// Length returns the number of elements currently in the queue.
+func (q *Queue[T]) Length() uint64 {
+	return q.len.Load()
 }
