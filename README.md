@@ -21,9 +21,12 @@ Each structure documents its *precise* guarantee rather than a blanket
 | Package | Type | Guarantee | Algorithm |
 |---------|------|-----------|-----------|
 | `lf` | `Stack[T]` | lock-free | Treiber |
+| `lf` | `EliminationStack[T]` | lock-free | Hendler, Shavit & Yerushalmi (elimination backoff) |
 | `lf` | `Queue[T]` | lock-free | Michael & Scott |
 | `lf` | `SkipList[K,V]` | lock-free (`Get`/`Search` wait-free) | Herlihy & Shavit, marked pointers |
 | `lf` | `OrderedMap[K,V]` | lock-free | backed by `SkipList` |
+| `lf` | `List[K,V]` | lock-free | Harris & Michael ordered list |
+| `lf` | `HashMap[K,V]` | lock-free | Michael (bucketed lists, fixed size) |
 | `wf` | `Queue[T]` | wait-free | Kogan & Petrank |
 | `wf` | `Stack[T]` | wait-free | Herlihy universal construction |
 | `wf` | `RingBuffer[T]` | wait-free, **bounded SPSC** (one producer, one consumer) | array + cursors |

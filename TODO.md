@@ -9,10 +9,13 @@ subpackages, and a shared conformance suite verifies every implementation of an
 ADT behaves identically:
 
 - `lf.Stack[T]`: lock-free (Treiber)
+- `lf.EliminationStack[T]`: lock-free (Hendler, Shavit & Yerushalmi elimination)
 - `lf.Queue[T]`: lock-free (Michael & Scott)
 - `lf.SkipList[K,V]` / `lf.OrderedMap[K,V]`: lock-free (Herlihy & Shavit, marked
   pointers); this also covers the "provably correct scalable concurrent skip
   list" line below in textbook lock-free form
+- `lf.List[K,V]`: lock-free ordered list-based map (Harris / Michael)
+- `lf.HashMap[K,V]`: lock-free hash table (Michael, fixed bucket count)
 - `wf.Queue[T]`: wait-free (Kogan & Petrank)
 - `wf.Stack[T]`: wait-free (Herlihy's universal construction)
 - `wf.RingBuffer[T]`: wait-free bounded SPSC
@@ -25,7 +28,7 @@ variants of structures already shipped.
 
 ### Linked List
 
-- [ ] Harris, Timothy L. "A pragmatic implementation of non-blocking linked-lists." International Symposium on Distributed Computing. Springer, Berlin, Heidelberg, 2001. [PDF](https://pdfs.semanticscholar.org/68a9/005a5ec10daece36ca5ecb9cad7be44770b1.pdf)
+- [x] Harris, Timothy L. "A pragmatic implementation of non-blocking linked-lists." International Symposium on Distributed Computing. Springer, Berlin, Heidelberg, 2001. [PDF](https://pdfs.semanticscholar.org/68a9/005a5ec10daece36ca5ecb9cad7be44770b1.pdf)
 - [ ] Sundell, Hakan, and Philippas Tsigas. "Lock-Free and Practical Deques and Doubly Linked Lists using Single-Word Compare-And-Swap." 2004 [PDF](https://pdfs.semanticscholar.org/8a68/f45bd32ed050a96faa24139ab71178258f13.pdf)
 - [ ] Valois, John D. "Lock-free linked lists using compare-and-swap." PODC. Vol. 95. 1995. [PDF](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.41.9506&rep=rep1&type=pdf)
 
@@ -43,7 +46,7 @@ variants of structures already shipped.
 
 ### Stack
 
-- [ ] Hendler, Danny, Nir Shavit, and Lena Yerushalmi. "A scalable lock-free stack algorithm." Proceedings of the sixteenth annual ACM symposium on Parallelism in algorithms and architectures. ACM, 2004. [PDF](http://www.inf.ufsc.br/~dovicchi/pos-ed/pos/artigos/p206-hendler.pdf)
+- [x] Hendler, Danny, Nir Shavit, and Lena Yerushalmi. "A scalable lock-free stack algorithm." Proceedings of the sixteenth annual ACM symposium on Parallelism in algorithms and architectures. ACM, 2004. [PDF](http://www.inf.ufsc.br/~dovicchi/pos-ed/pos/artigos/p206-hendler.pdf)
 
 ### Tree
 
@@ -53,4 +56,4 @@ variants of structures already shipped.
 
 ### Hash
 
-- [ ] Michael, Maged M. "High performance dynamic lock-free hash tables and list-based sets." Proceedings of the fourteenth annual ACM symposium on Parallel algorithms and architectures. ACM, 2002. [PDF](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.114.5854&rep=rep1&type=pdf)
+- [x] Michael, Maged M. "High performance dynamic lock-free hash tables and list-based sets." Proceedings of the fourteenth annual ACM symposium on Parallel algorithms and architectures. ACM, 2002. [PDF](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.114.5854&rep=rep1&type=pdf)
