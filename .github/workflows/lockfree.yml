@@ -60,4 +60,6 @@ jobs:
       with:
         go-version: '1.26'
     - name: Benchmark (mutex vs lock-free vs wait-free)
-      run: go test -run '^$' -bench=. -benchmem -timeout 30m ./...
+      # Smoke test only: a tiny benchtime keeps the swept sub-benchmarks fast.
+      # Run locally with a real -benchtime to get meaningful numbers.
+      run: go test -run '^$' -bench=. -benchtime=10ms -benchmem -timeout 30m ./...
