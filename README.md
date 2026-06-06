@@ -80,10 +80,17 @@ numbers do not:
   both. The skip list has a high per-operation constant (ordered, pointer
   chasing) but scales with cores without a contention bottleneck.
 - **Wait-free** types are slower on every throughput number because each
-  operation scans participant state and helps stalled peers. That is the trade:
-  they buy a bounded worst-case latency per operation that an averaged throughput
-  figure cannot show. Reach for them on latency-sensitive paths, not for peak
-  throughput.
+  operation scans participant state and helps stalled peers. The guarantee they
+  buy is analytical: each operation completes in a bounded number of *its own
+  steps* regardless of how the scheduler treats it, so no thread starves. That
+  bound is on step count, not wall-clock time, and it does not show up in a
+  benchmark on the Go runtime. A wall-clock latency tail under oversubscription
+  measures descheduling and GC pauses (which are in fact heavier for the
+  allocation-heavier wait-free code), not operation cost, so it makes wait-free
+  look worse, not better. Like the progress guarantees themselves, this property
+  lives in the analysis, not in a measurement. Reach for wait-free when you need
+  the no-starvation guarantee for correctness or real-time reasoning, not for
+  observed speed.
 
 Illustrative numbers (ns/op, lower is better) on an Apple M2 (8 cores), Go
 1.26.1. The `g=1` column is single-threaded latency; `g=8`/`g=32` are per-op time
