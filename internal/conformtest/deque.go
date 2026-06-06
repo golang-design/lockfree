@@ -25,6 +25,7 @@ func Deque(t *testing.T, factory DequeFactory) {
 	t.Run("Sequential", func(t *testing.T) { dequeSequential(t, factory) })
 	t.Run("Differential", func(t *testing.T) { dequeDifferential(t, factory) })
 	t.Run("ConcurrentConservation", func(t *testing.T) { dequeConservation(t, factory) })
+	t.Run("NearEmpty", func(t *testing.T) { dequeNearEmpty(t, factory) })
 }
 
 // dequeSequential checks the four operations and the empty cases on one deque.
@@ -128,6 +129,105 @@ func dequeDifferential(t *testing.T, factory DequeFactory) {
 		}
 		if !gok {
 			break
+		}
+	}
+}
+
+// dequeNearEmpty stresses the size 0<->1 boundary: many goroutines each run a
+// tight, balanced random mix of all four operations on a deque that hovers
+// around empty, so PopFront and PopBack constantly race for the same node. The
+// invariant is conservation: a live counter (pushes issued minus pops
+// completed) bumped up before every push and down after every successful pop
+// must never go negative (a phantom or double-pop would drive it below zero),
+// and after every goroutine stops the deque must drain to exactly empty with
+// each pushed value seen exactly once.
+func dequeNearEmpty(t *testing.T, factory DequeFactory) {
+	const workers = 16
+	const budget = 5000
+	participant := factory(workers + 1)
+	defer runtime.GOMAXPROCS(runtime.GOMAXPROCS(4))
+
+	var live atomic.Int64
+	results := make([][]int, workers)
+	var wg sync.WaitGroup
+	wg.Add(workers)
+	for g := 0; g < workers; g++ {
+		go func(g int) {
+			defer wg.Done()
+			d := participant()
+			rng := rand.New(rand.NewPCG(uint64(g)+1, 0x9e3779b9))
+			base := g * budget
+			pushed := 0
+			var mine []int
+			for i := 0; i < budget; i++ {
+				switch rng.IntN(4) {
+				case 0:
+					live.Add(1)
+					d.PushFront(base + pushed)
+					pushed++
+				case 1:
+					live.Add(1)
+					d.PushBack(base + pushed)
+					pushed++
+				case 2:
+					if v, ok := d.PopFront(); ok {
+						if n := live.Add(-1); n < 0 {
+							t.Errorf("live counter went negative (%d) after PopFront", n)
+							return
+						}
+						mine = append(mine, v)
+					}
+				case 3:
+					if v, ok := d.PopBack(); ok {
+						if n := live.Add(-1); n < 0 {
+							t.Errorf("live counter went negative (%d) after PopBack", n)
+							return
+						}
+						mine = append(mine, v)
+					}
+				}
+			}
+			results[g] = mine
+		}(g)
+	}
+	wg.Wait()
+
+	// Drain whatever is left; alternate ends to exercise both drain paths.
+	d := participant()
+	var drained []int
+	for i := 0; ; i++ {
+		var v int
+		var ok bool
+		if i%2 == 0 {
+			v, ok = d.PopFront()
+		} else {
+			v, ok = d.PopBack()
+		}
+		if !ok {
+			break
+		}
+		if n := live.Add(-1); n < 0 {
+			t.Fatalf("live counter went negative (%d) during drain", n)
+		}
+		drained = append(drained, v)
+	}
+	if n := live.Load(); n != 0 {
+		t.Fatalf("after drain live counter = %d, want 0 (deque not empty)", n)
+	}
+
+	// Every pushed value must appear exactly once across pops and the drain.
+	seen := make(map[int]int)
+	for _, mine := range results {
+		for _, v := range mine {
+			seen[v]++
+		}
+	}
+	for _, v := range drained {
+		seen[v]++
+	}
+	for v, n := range seen {
+		if n != 1 {
+			t.Fatalf("value %d seen %d times, want exactly 1", v, n)
 		}
 	}
 }
