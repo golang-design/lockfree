@@ -32,6 +32,7 @@ Each structure documents its *precise* guarantee rather than a blanket
 | `wf` | `Queue[T]` | wait-free | Kogan & Petrank |
 | `wf` | `Stack[T]` | wait-free | Herlihy universal construction |
 | `wf` | `Deque[T]` | wait-free, **O(maxHandles · log n)** (size-dependent, not O(maxHandles) like Queue/Stack) | Herlihy universal construction over a persistent AVL tree |
+| `wf` | `Map[K,V]` | wait-free, **O(maxHandles · log n)** (size-dependent; reads linearized too) | Herlihy universal construction over a persistent AVL search tree |
 | `wf` | `RingBuffer[T]` | wait-free, **bounded SPSC** (one producer, one consumer) | array + cursors |
 | (root) | `AddFloat64` | lock-free | atomic CAS loop |
 
@@ -55,20 +56,22 @@ h := q.Handle()                      // one Handle per goroutine
 h.Enqueue(1)
 ```
 
-The wait-free `Queue`, `Stack`, and `Deque` need participants to register,
+The wait-free `Queue`, `Stack`, `Deque`, and `Map` need participants to register,
 because their helping mechanism is indexed by a participant id and Go has no
 goroutine id. Acquire one handle per goroutine, up to `maxHandles`; the slots are
 not reclaimable, so this fits a bounded, long-lived worker pool. The queue and
-stack are O(`maxHandles`) per operation. The `Deque` is the exception: it is
-O(`maxHandles` · log n) in the element count, because it is the universal
-construction over a persistent balanced tree rather than a specialized algorithm.
-That size dependence appears inherent to wait-free deques (the dedicated state of
-the art is also polylogarithmic in size), so a wait-free `Deque` is not a free
-peer of the queue and stack, do not reach for it expecting their size-independent
-bound. Both the lock-free and wait-free queues satisfy the shared
-`lockfree.Queue[T]` interface (and likewise for stacks and deques), but the swap
-is not symmetric: on the `wf` side it is the per-goroutine handle, not the
-`Queue`, `Stack`, or `Deque` value, that satisfies the interface.
+stack are O(`maxHandles`) per operation. The `Deque` and `Map` are the
+exceptions: each is O(`maxHandles` · log n) in the element count, because it is
+the universal construction over a persistent balanced tree rather than a
+specialized algorithm (and for the `Map`, reads are linearized through the
+construction too, so a Get costs the same as a Set). That size dependence appears
+inherent to wait-free deques (the dedicated state of the art is also
+polylogarithmic in size), so the wait-free `Deque` and `Map` are not free peers
+of the queue and stack, do not reach for them expecting a size-independent bound.
+Both the lock-free and wait-free queues satisfy the shared `lockfree.Queue[T]`
+interface (and likewise for stacks, deques, and maps), but the swap is not
+symmetric: on the `wf` side it is the per-goroutine handle, not the `Queue`,
+`Stack`, `Deque`, or `Map` value, that satisfies the interface.
 
 ### Performance
 

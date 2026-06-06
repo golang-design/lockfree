@@ -52,6 +52,8 @@ jobs:
       run: go test -run '^$' -fuzz=FuzzStack -fuzztime=120s ./wf
     - name: Fuzz deque (wait-free)
       run: go test -run '^$' -fuzz=FuzzDeque -fuzztime=120s ./wf
+    - name: Fuzz map (wait-free)
+      run: go test -run '^$' -fuzz=FuzzMap -fuzztime=120s ./wf
 
   bench:
     name: Benchmark

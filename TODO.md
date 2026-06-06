@@ -23,6 +23,8 @@ are in [REFERENCES.md](REFERENCES.md):
 - `wf.Stack[T]`: wait-free (Herlihy's universal construction)
 - `wf.Deque[T]`: wait-free (Herlihy's universal construction over a persistent
   AVL tree; O(maxHandles * log n), size-dependent unlike Queue/Stack)
+- `wf.Map[K,V]`: wait-free ordered map (Herlihy's universal construction over a
+  persistent AVL search tree; O(maxHandles * log n), reads linearized too)
 - `wf.RingBuffer[T]`: wait-free bounded SPSC
 - `AddFloat64`: lock-free
 

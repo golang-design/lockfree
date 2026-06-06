@@ -73,6 +73,12 @@ implementation notes. Forward-looking candidates not yet implemented live in
   Complexity." OPODIS 2023.
   [DOI](https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.OPODIS.2023.17)
 
+- **`wf.Map[K,V]`** — wait-free ordered map via Herlihy's universal construction
+  (see below) over a persistent, height-balanced (AVL) binary search tree keyed
+  by K (Okasaki, see below). All operations including Get are linearized through
+  the construction, so each is O(maxHandles · log n) and size-dependent, like the
+  deque rather than the O(maxHandles) queue and stack.
+
 - **`wf.RingBuffer[T]`** — bounded single-producer/single-consumer FIFO buffer.
   Leslie Lamport. "Proving the Correctness of Multiprocess Programs." IEEE
   Transactions on Software Engineering SE-3(2), 1977; and "Concurrent Reading and
@@ -80,9 +86,9 @@ implementation notes. Forward-looking candidates not yet implemented live in
 
 ## Foundational results
 
-- **Herlihy's wait-free universal construction** — the basis of `wf.Stack` and
-  `wf.Deque`: any sequential object can be made wait-free by linearizing
-  operations through consensus with round-robin helping.
+- **Herlihy's wait-free universal construction** — the basis of `wf.Stack`,
+  `wf.Deque`, and `wf.Map`: any sequential object can be made wait-free by
+  linearizing operations through consensus with round-robin helping.
   Maurice Herlihy. "Wait-free synchronization." ACM Transactions on Programming
   Languages and Systems 13(1), 1991, 124-149.
   [DOI](https://dl.acm.org/doi/10.1145/114005.102808)
@@ -93,9 +99,9 @@ implementation notes. Forward-looking candidates not yet implemented live in
   read-modify-write loop in **`AddFloat64`** (root package). Same Herlihy 1991
   paper as above.
 
-- **Persistent (purely functional) data structures** — `wf.Deque` represents its
-  sequential state as an immutable balanced tree so the universal construction
-  can apply operations as pure functions.
+- **Persistent (purely functional) data structures** — `wf.Deque` and `wf.Map`
+  represent their sequential state as an immutable balanced tree so the universal
+  construction can apply operations as pure functions.
   Chris Okasaki. "Purely Functional Data Structures." Cambridge University Press,
   1998.
 

@@ -15,9 +15,10 @@
 //   - lockfree/wf holds the wait-free structures: every operation completes in a
 //     bounded number of its own steps regardless of scheduling (no starvation),
 //     at a higher constant cost. RingBuffer (SPSC), Queue (Kogan & Petrank),
-//     Stack (Herlihy's universal construction), Deque (universal construction
-//     over a persistent balanced tree; bounded but O(maxHandles * log n), so
-//     size-dependent unlike the O(maxHandles) Queue and Stack).
+//     Stack (Herlihy's universal construction), Deque and Map (universal
+//     construction over a persistent balanced tree; bounded but
+//     O(maxHandles * log n), so size-dependent unlike the O(maxHandles) Queue
+//     and Stack).
 //
 // Wait-free is strictly stronger than lock-free, so a wait-free type is also
 // lock-free; the wf package exists to give a bounded-latency choice where that
