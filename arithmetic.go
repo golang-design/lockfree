@@ -10,7 +10,13 @@ import (
 	"unsafe"
 )
 
-// AddFloat64 add delta to given address atomically
+// AddFloat64 atomically adds delta to the float64 at addr and returns the new
+// value. float64 has no native atomic add, so this is the standard lock-free
+// read-modify-write: load the current bits, compute the sum, and publish it with
+// a compare-and-swap, retrying if another writer intervened. The construction is
+// lock-free (some racing writer always makes progress) and rests on the
+// universality of compare-and-swap for lock-free read-modify-write (Herlihy,
+// "Wait-Free Synchronization", ACM TOPLAS 1991).
 func AddFloat64(addr *float64, delta float64) (new float64) {
 	var old float64
 	for {

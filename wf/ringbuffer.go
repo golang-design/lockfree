@@ -11,7 +11,11 @@ import "sync/atomic"
 const cacheLine = 64
 
 // RingBuffer is a bounded single-producer/single-consumer (SPSC) FIFO ring
-// buffer.
+// buffer. It is the classic single-producer/single-consumer bounded buffer of
+// Lamport ("Proving the Correctness of Multiprocess Programs", IEEE TSE 1977;
+// "Concurrent Reading and Writing", CACM 1977): one producer cursor and one
+// consumer cursor over an array, each owned by a single goroutine and published
+// with release/acquire ordering, so the two never need mutual exclusion.
 //
 // Progress guarantee: wait-free. With exactly one producer and one consumer,
 // Put and Get each complete in a bounded number of steps with no loops and no

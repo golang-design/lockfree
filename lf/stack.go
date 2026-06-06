@@ -6,7 +6,9 @@ package lf
 
 import "sync/atomic"
 
-// Stack is a lock-free LIFO stack (Treiber stack).
+// Stack is a lock-free LIFO stack (R. K. Treiber, "Systems Programming: Coping
+// with Parallelism", IBM Almaden Research Center, Technical Report RJ 5118,
+// 1986).
 //
 // Progress guarantee: lock-free. Push and Pop are CAS loops over the top
 // pointer; on a failed CAS each retries against the freshly loaded top, and no
