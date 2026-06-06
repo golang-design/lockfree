@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"golang.design/x/lockfree/lf"
+	"golang.design/x/lockfree/wf"
 )
 
 func TestStackPopEmpty(t *testing.T) {
@@ -150,28 +151,62 @@ func (s *mutexStack) Pop() (int, bool) {
 	return v, true
 }
 
-// BenchmarkStack compares the lock-free stack against a mutex-guarded stack
-// under contention, alternating Push and Pop across all goroutines.
+// BenchmarkStack compares the four stack implementations (mutex, lock-free
+// Treiber, lock-free elimination-backoff, wait-free) under a balanced push/pop
+// workload swept across goroutine counts. The stack is prefilled so pops mostly
+// succeed instead of hitting the cheap empty path.
+//
+// The wait-free stack does more work per operation (it scans the participant
+// state and helps stalled peers), so it is slower on this throughput measure at
+// every level. That is the expected trade: its value is a bounded worst-case
+// latency per operation under adversarial scheduling, which an averaged
+// throughput number cannot show.
 func BenchmarkStack(b *testing.B) {
+	const prefill = 1024
 	impls := []struct {
-		name string
-		s    stackInterface
+		name  string
+		build func(maxParticipants int) func(pb *testing.PB)
 	}{
-		{"lockfree", lf.NewStack[int]()},
-		{"mutex", newMutexStack()},
+		{"mutex", func(int) func(*testing.PB) {
+			s := newMutexStack()
+			for i := 0; i < prefill; i++ {
+				s.Push(i)
+			}
+			return balancedPushPop(func() (func(), func()) {
+				return func() { s.Push(1) }, func() { s.Pop() }
+			})
+		}},
+		{"lockfree", func(int) func(*testing.PB) {
+			s := lf.NewStack[int]()
+			for i := 0; i < prefill; i++ {
+				s.Push(i)
+			}
+			return balancedPushPop(func() (func(), func()) {
+				return func() { s.Push(1) }, func() { s.Pop() }
+			})
+		}},
+		{"elimination", func(int) func(*testing.PB) {
+			s := lf.NewEliminationStack[int]()
+			for i := 0; i < prefill; i++ {
+				s.Push(i)
+			}
+			return balancedPushPop(func() (func(), func()) {
+				return func() { s.Push(1) }, func() { s.Pop() }
+			})
+		}},
+		{"waitfree", func(maxParticipants int) func(*testing.PB) {
+			s := wf.NewStack[int](maxParticipants)
+			pre := s.Handle()
+			for i := 0; i < prefill; i++ {
+				pre.Push(i)
+			}
+			return balancedPushPop(func() (func(), func()) {
+				h := s.Handle()
+				return func() { h.Push(1) }, func() { h.Pop() }
+			})
+		}},
 	}
 	for _, impl := range impls {
-		b.Run(impl.name, func(b *testing.B) {
-			var c int64
-			b.RunParallel(func(pb *testing.PB) {
-				for pb.Next() {
-					if atomic.AddInt64(&c, 1)&1 == 0 {
-						impl.s.Push(1)
-					} else {
-						impl.s.Pop()
-					}
-				}
-			})
-		})
+		b.Run(impl.name, func(b *testing.B) { runSweep(b, impl.build) })
 	}
 }
