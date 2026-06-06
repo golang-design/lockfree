@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"golang.design/x/lockfree/lf"
+	"golang.design/x/lockfree/wf"
 )
 
 func TestQueueDequeueEmpty(t *testing.T) {
@@ -157,28 +158,51 @@ func (q *mutexQueue) Dequeue() (int, bool) {
 	return v, true
 }
 
-// BenchmarkQueue compares the lock-free queue against a mutex-guarded queue
-// under contention, alternating Enqueue and Dequeue across all goroutines.
+// BenchmarkQueue compares the three queue implementations (mutex, lock-free
+// Michael & Scott, wait-free Kogan & Petrank) under a balanced enqueue/dequeue
+// workload swept across goroutine counts. The queue is prefilled so dequeues
+// mostly succeed instead of hitting the cheap empty path.
+//
+// As with the stack, the wait-free queue is slower on this throughput measure
+// because it scans participant state and helps stalled peers; it buys a bounded
+// per-operation latency that an averaged throughput number does not show.
 func BenchmarkQueue(b *testing.B) {
+	const prefill = 1024
 	impls := []struct {
-		name string
-		q    queueInterface
+		name  string
+		build func(maxParticipants int) func(pb *testing.PB)
 	}{
-		{"lockfree", lf.NewQueue[int]()},
-		{"mutex", newMutexQueue()},
+		{"mutex", func(int) func(*testing.PB) {
+			q := newMutexQueue()
+			for i := 0; i < prefill; i++ {
+				q.Enqueue(i)
+			}
+			return balancedPushPop(func() (func(), func()) {
+				return func() { q.Enqueue(1) }, func() { q.Dequeue() }
+			})
+		}},
+		{"lockfree", func(int) func(*testing.PB) {
+			q := lf.NewQueue[int]()
+			for i := 0; i < prefill; i++ {
+				q.Enqueue(i)
+			}
+			return balancedPushPop(func() (func(), func()) {
+				return func() { q.Enqueue(1) }, func() { q.Dequeue() }
+			})
+		}},
+		{"waitfree", func(maxParticipants int) func(*testing.PB) {
+			q := wf.NewQueue[int](maxParticipants)
+			pre := q.Handle()
+			for i := 0; i < prefill; i++ {
+				pre.Enqueue(i)
+			}
+			return balancedPushPop(func() (func(), func()) {
+				h := q.Handle()
+				return func() { h.Enqueue(1) }, func() { h.Dequeue() }
+			})
+		}},
 	}
 	for _, impl := range impls {
-		b.Run(impl.name, func(b *testing.B) {
-			var c int64
-			b.RunParallel(func(pb *testing.PB) {
-				for pb.Next() {
-					if atomic.AddInt64(&c, 1)&1 == 0 {
-						impl.q.Enqueue(1)
-					} else {
-						impl.q.Dequeue()
-					}
-				}
-			})
-		})
+		b.Run(impl.name, func(b *testing.B) { runSweep(b, impl.build) })
 	}
 }
