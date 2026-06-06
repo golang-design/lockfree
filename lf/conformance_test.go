@@ -17,6 +17,7 @@ var (
 	_ lockfree.Queue[int]    = (*lf.Queue[int])(nil)
 	_ lockfree.Stack[int]    = (*lf.Stack[int])(nil)
 	_ lockfree.Stack[int]    = (*lf.EliminationStack[int])(nil)
+	_ lockfree.Deque[int]    = (*lf.Deque[int])(nil)
 	_ lockfree.Map[int, int] = (*lf.SkipList[int, int])(nil)
 	_ lockfree.Map[int, int] = (*lf.OrderedMap[int, int])(nil)
 	_ lockfree.Map[int, int] = (*lf.List[int, int])(nil)

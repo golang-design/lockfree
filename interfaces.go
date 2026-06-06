@@ -27,6 +27,14 @@ type Stack[T any] interface {
 	Pop() (v T, ok bool)
 }
 
+// Deque is a double-ended queue. Satisfied by *lf.Deque[T].
+type Deque[T any] interface {
+	PushFront(v T)
+	PushBack(v T)
+	PopFront() (v T, ok bool)
+	PopBack() (v T, ok bool)
+}
+
 // Map is a key/value map. Satisfied by *lf.SkipList[K, V].
 type Map[K, V any] interface {
 	Set(k K, v V)
