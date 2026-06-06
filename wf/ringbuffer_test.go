@@ -2,17 +2,17 @@
 // All rights reserved. Use of this source code is governed
 // by a MIT license that can be found in the LICENSE file.
 
-package lockfree_test
+package wf_test
 
 import (
 	"sync"
 	"testing"
 
-	"golang.design/x/lockfree"
+	"golang.design/x/lockfree/wf"
 )
 
 func TestRingBuffer(t *testing.T) {
-	rb := lockfree.NewRingBuffer[int](10) // rounds up to 16
+	rb := wf.NewRingBuffer[int](10) // rounds up to 16
 
 	if got := rb.Cap(); got != 16 {
 		t.Fatalf("Cap: got %d, want 16 (next power of two of 10)", got)
@@ -48,7 +48,7 @@ func TestRingBuffer(t *testing.T) {
 }
 
 func TestRingBufferMinCapacity(t *testing.T) {
-	rb := lockfree.NewRingBuffer[int](0) // rounds up to 1
+	rb := wf.NewRingBuffer[int](0) // rounds up to 1
 	if got := rb.Cap(); got != 1 {
 		t.Fatalf("Cap: got %d, want 1", got)
 	}
@@ -69,7 +69,7 @@ func TestRingBufferMinCapacity(t *testing.T) {
 // wait-freedom; see the doc comment on RingBuffer for that argument.)
 func TestRingBufferConcurrent(t *testing.T) {
 	const n = 1 << 20
-	rb := lockfree.NewRingBuffer[int](1024)
+	rb := wf.NewRingBuffer[int](1024)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -150,7 +150,7 @@ func BenchmarkRingBuffer(b *testing.B) {
 		name string
 		rb   ringBufferInterface
 	}{
-		{"lockfree", lockfree.NewRingBuffer[int](capacity)},
+		{"lockfree", wf.NewRingBuffer[int](capacity)},
 		{"mutex", newMutexRingBuffer(capacity)},
 	}
 	for _, impl := range impls {
