@@ -7,7 +7,6 @@ package lf_test
 import (
 	"math/rand/v2"
 	"sync"
-	"sync/atomic"
 	"testing"
 
 	"golang.design/x/lockfree/lf"
@@ -269,79 +268,5 @@ func TestSkipList_ContendedSameKey(t *testing.T) {
 	})
 	if got := sl.Len(); got != count {
 		t.Fatalf("Len %d disagrees with Range count %d (counter drift or stale node)", got, count)
-	}
-}
-
-// skipListInterface lets the benchmark drive both implementations identically.
-type skipListInterface interface {
-	Set(int, int)
-	Get(int) (int, bool)
-	Del(int) (int, bool)
-}
-
-// mutexMap is the mutex-guarded baseline for the benchmark.
-type mutexMap struct {
-	mu sync.Mutex
-	m  map[int]int
-}
-
-func newMutexMap() *mutexMap { return &mutexMap{m: map[int]int{}} }
-
-func (s *mutexMap) Set(k, v int) {
-	s.mu.Lock()
-	s.m[k] = v
-	s.mu.Unlock()
-}
-
-func (s *mutexMap) Get(k int) (int, bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	v, ok := s.m[k]
-	return v, ok
-}
-
-func (s *mutexMap) Del(k int) (int, bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	v, ok := s.m[k]
-	delete(s.m, k)
-	return v, ok
-}
-
-// BenchmarkSkipList compares the lock-free skip list against a mutex-guarded map
-// under a read-heavy mixed workload.
-func BenchmarkSkipList(b *testing.B) {
-	const keyspace = 1 << 16
-	impls := []struct {
-		name string
-		s    skipListInterface
-	}{
-		{"lockfree", newSkipList()},
-		{"mutex", newMutexMap()},
-	}
-	for _, impl := range impls {
-		for i := 0; i < keyspace; i++ { // warm up
-			impl.s.Set(i, i)
-		}
-		b.Run(impl.name, func(b *testing.B) {
-			var c int64
-			b.RunParallel(func(pb *testing.PB) {
-				r := rand.Uint64()
-				for pb.Next() {
-					r ^= r << 13
-					r ^= r >> 7
-					r ^= r << 17 // xorshift for a cheap per-iteration key
-					k := int(r % keyspace)
-					switch atomic.AddInt64(&c, 1) & 7 {
-					case 0:
-						impl.s.Set(k, k)
-					case 1:
-						impl.s.Del(k)
-					default:
-						impl.s.Get(k)
-					}
-				}
-			})
-		})
 	}
 }
