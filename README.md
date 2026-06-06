@@ -2,7 +2,6 @@
 
 [![PkgGoDev](https://pkg.go.dev/badge/golang.design/x/lockfree)](https://pkg.go.dev/golang.design/x/lockfree) [![Go Report Card](https://goreportcard.com/badge/golang.design/x/lockfree)](https://goreportcard.com/report/golang.design/x/lockfree)
 ![lockfree](https://github.com/golang-design/lockfree/workflows/lockfree/badge.svg?branch=master)
-[![codecov](https://codecov.io/gh/golang-design/lockfree/branch/master/graph/badge.svg)](https://codecov.io/gh/golang-design/lockfree)
 
 
 Package lockfree offers concurrent data structures with non-blocking progress
