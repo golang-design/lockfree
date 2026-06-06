@@ -88,8 +88,9 @@ numbers do not:
   measures descheduling and GC pauses (which are in fact heavier for the
   allocation-heavier wait-free code), not operation cost, so it makes wait-free
   look worse, not better. Like the progress guarantees themselves, this property
-  lives in the analysis, not in a measurement. Reach for wait-free when you need
-  the no-starvation guarantee for correctness or real-time reasoning, not for
+  lives in the analysis, not in a measurement. `BenchmarkQueueLatency` keeps this
+  as a reproducible negative result. Reach for wait-free when you need the
+  no-starvation guarantee for correctness or real-time reasoning, not for
   observed speed.
 
 Illustrative numbers (ns/op, lower is better) on an Apple M2 (8 cores), Go
