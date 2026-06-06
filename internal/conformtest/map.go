@@ -12,10 +12,11 @@ import (
 	"golang.design/x/lockfree"
 )
 
-// MapFactory builds an empty key/value map. Both lock-free map implementations
-// support unbounded concurrent participants, so a single map value is shared by
-// all goroutines and no per-participant handle is needed.
-type MapFactory func() lockfree.Map[int, int]
+// MapFactory builds a map supporting up to maxParticipants concurrent
+// participants and returns a function that yields one participant's view. A
+// lock-free map (unbounded participants) returns the same value every time; a
+// wait-free map returns a fresh per-goroutine handle from the budget.
+type MapFactory func(maxParticipants int) (participant func() lockfree.Map[int, int])
 
 // Map runs the full behavioral conformance suite for a key/value map against the
 // given implementation.
@@ -32,7 +33,7 @@ func mapDifferential(t *testing.T, factory MapFactory) {
 	// stress lives in each type's own tests.
 	const ops = 50000
 	const keyspace = 256
-	m := factory()
+	m := factory(1)()
 	ref := map[int]int{}
 	rng := rand.New(rand.NewPCG(1, 2))
 
@@ -73,13 +74,14 @@ func mapDifferential(t *testing.T, factory MapFactory) {
 func mapConcurrentDisjoint(t *testing.T, factory MapFactory) {
 	const workers = 8
 	const perWorker = 300
-	m := factory()
+	participant := factory(workers + 1)
 
 	var wg sync.WaitGroup
 	wg.Add(workers)
 	for w := 0; w < workers; w++ {
 		go func(base int) {
 			defer wg.Done()
+			m := participant()
 			for i := 0; i < perWorker; i++ {
 				m.Set(base+i, base+i)
 			}
@@ -90,6 +92,7 @@ func mapConcurrentDisjoint(t *testing.T, factory MapFactory) {
 	}
 	wg.Wait()
 
+	m := participant()
 	for w := 0; w < workers; w++ {
 		base := w * perWorker
 		for i := 0; i < perWorker; i++ {

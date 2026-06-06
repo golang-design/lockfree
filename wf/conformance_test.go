@@ -15,9 +15,10 @@ import (
 // Compile-time assertions. Note it is the per-goroutine handle, not the Queue or
 // Stack value, that satisfies the shared contract.
 var (
-	_ lockfree.Queue[int] = (*wf.Handle[int])(nil)
-	_ lockfree.Stack[int] = (*wf.StackHandle[int])(nil)
-	_ lockfree.Deque[int] = (*wf.DequeHandle[int])(nil)
+	_ lockfree.Queue[int]    = (*wf.Handle[int])(nil)
+	_ lockfree.Stack[int]    = (*wf.StackHandle[int])(nil)
+	_ lockfree.Deque[int]    = (*wf.DequeHandle[int])(nil)
+	_ lockfree.Map[int, int] = (*wf.MapHandle[int, int])(nil)
 )
 
 // TestQueueConformance runs the shared FIFO-queue conformance suite against the
@@ -45,5 +46,14 @@ func TestDequeConformance(t *testing.T) {
 	conformtest.Deque(t, func(maxParticipants int) func() lockfree.Deque[int] {
 		d := wf.NewDeque[int](maxParticipants)
 		return func() lockfree.Deque[int] { return d.Handle() }
+	})
+}
+
+// TestMapConformance runs the shared map conformance suite against the wait-free
+// ordered map (Herlihy's universal construction over a persistent AVL tree).
+func TestMapConformance(t *testing.T) {
+	conformtest.Map(t, func(maxParticipants int) func() lockfree.Map[int, int] {
+		m := wf.NewMap[int, int](maxParticipants, func(a, b int) bool { return a < b })
+		return func() lockfree.Map[int, int] { return m.Handle() }
 	})
 }

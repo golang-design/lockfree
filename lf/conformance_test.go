@@ -60,29 +60,26 @@ func TestStackConformance(t *testing.T) {
 // lock-free map implementations: the skip list and the ordered-map facade over
 // it.
 func TestMapConformance(t *testing.T) {
+	// Lock-free maps support unbounded participants, so every goroutine shares
+	// the same map value.
+	shared := func(m lockfree.Map[int, int]) conformtest.MapFactory {
+		return func(maxParticipants int) func() lockfree.Map[int, int] {
+			return func() lockfree.Map[int, int] { return m }
+		}
+	}
 	t.Run("SkipList", func(t *testing.T) {
-		conformtest.Map(t, func() lockfree.Map[int, int] {
-			return lf.NewSkipList[int, int](func(a, b int) bool { return a < b })
-		})
+		conformtest.Map(t, shared(lf.NewSkipList[int, int](func(a, b int) bool { return a < b })))
 	})
 	t.Run("OrderedMap", func(t *testing.T) {
-		conformtest.Map(t, func() lockfree.Map[int, int] {
-			return lf.NewOrderedMap[int, int](func(a, b int) bool { return a < b })
-		})
+		conformtest.Map(t, shared(lf.NewOrderedMap[int, int](func(a, b int) bool { return a < b })))
 	})
 	t.Run("List", func(t *testing.T) {
-		conformtest.Map(t, func() lockfree.Map[int, int] {
-			return lf.NewList[int, int](func(a, b int) bool { return a < b })
-		})
+		conformtest.Map(t, shared(lf.NewList[int, int](func(a, b int) bool { return a < b })))
 	})
 	t.Run("HashMap", func(t *testing.T) {
-		conformtest.Map(t, func() lockfree.Map[int, int] {
-			return lf.NewHashMap[int, int](64, hashInt, func(a, b int) bool { return a < b })
-		})
+		conformtest.Map(t, shared(lf.NewHashMap[int, int](64, hashInt, func(a, b int) bool { return a < b })))
 	})
 	t.Run("SplitHashMap", func(t *testing.T) {
-		conformtest.Map(t, func() lockfree.Map[int, int] {
-			return lf.NewSplitHashMap[int, int](hashInt, func(a, b int) bool { return a < b })
-		})
+		conformtest.Map(t, shared(lf.NewSplitHashMap[int, int](hashInt, func(a, b int) bool { return a < b })))
 	})
 }
