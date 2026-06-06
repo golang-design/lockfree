@@ -133,14 +133,19 @@ func dequeDifferential(t *testing.T, factory DequeFactory) {
 	}
 }
 
-// dequeNearEmpty stresses the size 0<->1 boundary: many goroutines each run a
-// tight, balanced random mix of all four operations on a deque that hovers
-// around empty, so PopFront and PopBack constantly race for the same node. The
-// invariant is conservation: a live counter (pushes issued minus pops
-// completed) bumped up before every push and down after every successful pop
-// must never go negative (a phantom or double-pop would drive it below zero),
-// and after every goroutine stops the deque must drain to exactly empty with
-// each pushed value seen exactly once.
+// dequeNearEmpty stresses the size 0<->1 boundary so PopFront and PopBack race
+// for the same last node. Each worker strictly alternates push and pop (random
+// ends), so it holds at most one outstanding element and the combined size stays
+// bounded by the worker count and keeps returning to empty. A free 50/50 mix
+// would instead drift away from empty (a reflected symmetric random walk grows
+// like the square root of the op count), defeating the point.
+//
+// Two invariants are checked. Conservation: a live counter (pushes issued minus
+// pops completed) is bumped up before every push and down after every successful
+// pop; it must never go negative (a phantom or double-pop would drive it below
+// zero) and the deque must drain to exactly empty with each pushed value seen
+// once. Near-empty: the live counter never exceeds the worker count, confirming
+// the test actually concentrates on the small-size regime it claims to.
 func dequeNearEmpty(t *testing.T, factory DequeFactory) {
 	const workers = 16
 	const budget = 5000
@@ -148,6 +153,16 @@ func dequeNearEmpty(t *testing.T, factory DequeFactory) {
 	defer runtime.GOMAXPROCS(runtime.GOMAXPROCS(4))
 
 	var live atomic.Int64
+	var maxLive atomic.Int64
+	bumpLive := func() {
+		n := live.Add(1)
+		for {
+			m := maxLive.Load()
+			if n <= m || maxLive.CompareAndSwap(m, n) {
+				break
+			}
+		}
+	}
 	results := make([][]int, workers)
 	var wg sync.WaitGroup
 	wg.Add(workers)
@@ -160,37 +175,42 @@ func dequeNearEmpty(t *testing.T, factory DequeFactory) {
 			pushed := 0
 			var mine []int
 			for i := 0; i < budget; i++ {
-				switch rng.IntN(4) {
-				case 0:
-					live.Add(1)
-					d.PushFront(base + pushed)
-					pushed++
-				case 1:
-					live.Add(1)
-					d.PushBack(base + pushed)
-					pushed++
-				case 2:
-					if v, ok := d.PopFront(); ok {
-						if n := live.Add(-1); n < 0 {
-							t.Errorf("live counter went negative (%d) after PopFront", n)
-							return
-						}
-						mine = append(mine, v)
+				if i%2 == 0 { // push turn
+					bumpLive()
+					if rng.IntN(2) == 0 {
+						d.PushFront(base + pushed)
+					} else {
+						d.PushBack(base + pushed)
 					}
-				case 3:
-					if v, ok := d.PopBack(); ok {
-						if n := live.Add(-1); n < 0 {
-							t.Errorf("live counter went negative (%d) after PopBack", n)
-							return
-						}
-						mine = append(mine, v)
+					pushed++
+					continue
+				}
+				// pop turn
+				var v int
+				var ok bool
+				if rng.IntN(2) == 0 {
+					v, ok = d.PopFront()
+				} else {
+					v, ok = d.PopBack()
+				}
+				if ok {
+					if n := live.Add(-1); n < 0 {
+						t.Errorf("live counter went negative (%d) after pop", n)
+						return
 					}
+					mine = append(mine, v)
 				}
 			}
 			results[g] = mine
 		}(g)
 	}
 	wg.Wait()
+	// Strict alternation lets each worker carry at most one outstanding element,
+	// so the deque size never exceeds the worker count: this confirms the test
+	// stayed in the small-size regime instead of drifting away from empty.
+	if m := maxLive.Load(); m > workers {
+		t.Fatalf("max live size %d exceeded worker count %d; test not near-empty", m, workers)
+	}
 
 	// Drain whatever is left; alternate ends to exercise both drain paths.
 	d := participant()
