@@ -17,6 +17,7 @@ import (
 var (
 	_ lockfree.Queue[int] = (*wf.Handle[int])(nil)
 	_ lockfree.Stack[int] = (*wf.StackHandle[int])(nil)
+	_ lockfree.Deque[int] = (*wf.DequeHandle[int])(nil)
 )
 
 // TestQueueConformance runs the shared FIFO-queue conformance suite against the
@@ -35,5 +36,14 @@ func TestStackConformance(t *testing.T) {
 	conformtest.Stack(t, func(maxParticipants int) func() lockfree.Stack[int] {
 		s := wf.NewStack[int](maxParticipants)
 		return func() lockfree.Stack[int] { return s.Handle() }
+	})
+}
+
+// TestDequeConformance runs the shared deque conformance suite against the
+// wait-free deque (Herlihy's universal construction over a persistent AVL tree).
+func TestDequeConformance(t *testing.T) {
+	conformtest.Deque(t, func(maxParticipants int) func() lockfree.Deque[int] {
+		d := wf.NewDeque[int](maxParticipants)
+		return func() lockfree.Deque[int] { return d.Handle() }
 	})
 }
