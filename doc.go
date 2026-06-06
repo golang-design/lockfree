@@ -2,30 +2,32 @@
 // All rights reserved. Use of this source code is governed
 // by a MIT license that can be found in the LICENSE file.
 
-// Package lockfree offers concurrent data structures with non-blocking
-// progress guarantees.
+// Package lockfree offers concurrent data structures organized by their
+// non-blocking progress guarantee, so callers can choose the variant that fits
+// their use case.
 //
-// Each type documents its precise guarantee rather than a blanket "lock-free"
-// claim, because they differ:
+// The implementations live in two subpackages:
 //
-//   - Stack[T]       lock-free LIFO (Treiber)
-//   - Queue[T]       lock-free FIFO (Michael & Scott)
-//   - RingBuffer[T]  wait-free bounded SPSC ring buffer (single producer,
-//     single consumer)
-//   - SkipList[K,V]  lock-free ordered map (Herlihy & Shavit, marked pointers);
-//     Get/Search are wait-free
-//   - OrderedMap[K,V] lock-free ordered map backed by SkipList
-//   - AddFloat64     lock-free atomic float64 addition
+//   - lockfree/lf — lock-free structures: some operation always makes
+//     system-wide progress with no locks, faster in the common case, callers
+//     tolerate occasional retries. Stack, Queue, SkipList, OrderedMap.
+//   - lockfree/wf — wait-free structures: every operation completes in a
+//     bounded number of its own steps regardless of scheduling (no starvation),
+//     at a higher constant cost. RingBuffer (SPSC), Queue (Kogan & Petrank).
 //
-// Progress guarantees here mean: wait-free — every operation completes in a
-// bounded number of its own steps; lock-free — some operation always makes
-// progress system-wide, with no locks and no operation waiting on another.
-// The race detector verifies memory safety but cannot prove these guarantees;
-// the argument for each lives in that type's doc comment.
+// Wait-free is strictly stronger than lock-free, so a wait-free type is also
+// lock-free; the wf package exists to give a bounded-latency choice where that
+// matters (real-time, SLO-sensitive paths).
 //
-// Memory reclamation relies on Go's garbage collector: a node stays alive while
-// any goroutine still references it, which is what makes the bare
-// compare-and-swap loops safe from use-after-free and the classic ABA hazard.
+// This root package itself holds only guarantee-neutral pieces: the ADT
+// contracts (Queue, Stack, Map) that both subpackages implement and that a
+// single conformance suite verifies; the Less comparator; BinarySearch; and
+// AddFloat64.
+//
+// The race detector verifies memory safety but cannot prove a progress
+// guarantee; the argument for each type lives in its doc comment. Memory
+// reclamation relies on Go's garbage collector, which also avoids the ABA hazard
+// without hazard pointers.
 //
 // Note that this package is under development and not for production use.
 package lockfree // import "golang.design/x/lockfree"
