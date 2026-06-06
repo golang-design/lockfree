@@ -61,6 +61,12 @@ type opDesc[T any] struct {
 // participant id and Go has no goroutine id, callers obtain a Handle (one per
 // goroutine) up to the maxHandles bound declared at construction. Each operation
 // is O(maxHandles), the documented cost of the wait-free latency bound.
+//
+// Handle slots are NOT reclaimable: maxHandles is the total number of Handle
+// calls allowed over the queue's whole lifetime, not a count of concurrently
+// active participants. This suits a bounded, long-lived worker pool (acquire one
+// Handle per worker at startup); calling Handle per request/goroutine will
+// exhaust the slots and panic.
 type Queue[T any] struct {
 	head  atomic.Pointer[node[T]]
 	tail  atomic.Pointer[node[T]]
@@ -69,8 +75,9 @@ type Queue[T any] struct {
 	max   int
 }
 
-// NewQueue creates a wait-free queue that supports up to maxHandles concurrent
-// participants. maxHandles must be at least 1.
+// NewQueue creates a wait-free queue. maxHandles is the total number of Handle
+// registrations allowed over the queue's lifetime (slots are not reclaimable);
+// it must be at least 1.
 func NewQueue[T any](maxHandles int) *Queue[T] {
 	if maxHandles < 1 {
 		panic("wf: NewQueue maxHandles must be >= 1")
@@ -98,8 +105,9 @@ type Handle[T any] struct {
 	tid int
 }
 
-// Handle registers a new participant and returns its Handle. It panics if more
-// than maxHandles handles are requested.
+// Handle registers a new participant and returns its Handle. Each call
+// permanently consumes one of the maxHandles slots (they are not released when a
+// Handle is dropped). It panics if more than maxHandles handles are requested.
 func (q *Queue[T]) Handle() *Handle[T] {
 	id := q.next.Add(1) - 1
 	if id >= int64(q.max) {

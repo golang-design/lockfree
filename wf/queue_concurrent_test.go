@@ -34,8 +34,8 @@ func TestQueueConcurrentFIFO(t *testing.T) {
 	const perProducer = 4000
 	const expected = producers * perProducer
 
-	q := wf.NewQueue[pair](producers + 1) // +1 for the consumer handle
-	runtime.GOMAXPROCS(4)                  // handles (25) >> procs (4)
+	q := wf.NewQueue[pair](producers + 1)           // +1 for the consumer handle
+	defer runtime.GOMAXPROCS(runtime.GOMAXPROCS(4)) // handles (25) >> procs (4); restore after
 
 	var wg sync.WaitGroup
 	wg.Add(producers)
@@ -83,7 +83,7 @@ func TestQueueConcurrentConservation(t *testing.T) {
 	const expected = producers * perProducer
 
 	q := wf.NewQueue[int](producers + consumers)
-	runtime.GOMAXPROCS(4)
+	defer runtime.GOMAXPROCS(runtime.GOMAXPROCS(4))
 
 	var pg sync.WaitGroup
 	pg.Add(producers)
