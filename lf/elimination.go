@@ -6,6 +6,7 @@ package lf
 
 import (
 	"math/rand/v2"
+	"runtime"
 	"sync/atomic"
 )
 
@@ -62,6 +63,10 @@ func (e *exchanger[T]) exchange(my *T, spins int) (partner *T, matched bool) {
 				e.p.CompareAndSwap(c, nil) // we are the single resetter
 				return c.item, true
 			}
+			// Yield so a partner can run and match us even when the number of
+			// hardware threads is small; without this, elimination can fail to
+			// fire on low-core machines (a tight spin starves the matcher).
+			runtime.Gosched()
 		}
 		if e.p.CompareAndSwap(mine, nil) {
 			return nil, false // timed out, withdrew cleanly
