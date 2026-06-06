@@ -42,8 +42,10 @@ jobs:
     - uses: actions/setup-go@v5
       with:
         go-version: '1.26'
-    - name: Fuzz skip list
-      run: go test -run '^$' -fuzz=FuzzSkipList -fuzztime=120s .
+    - name: Fuzz skip list (lock-free)
+      run: go test -run '^$' -fuzz=FuzzSkipList -fuzztime=120s ./lf
+    - name: Fuzz queue (wait-free)
+      run: go test -run '^$' -fuzz=FuzzQueue -fuzztime=120s ./wf
 
   bench:
     name: Benchmark
@@ -53,5 +55,5 @@ jobs:
     - uses: actions/setup-go@v5
       with:
         go-version: '1.26'
-    - name: Benchmark (mutex vs lock-free)
-      run: go test -run '^$' -bench=. -benchmem -timeout 30m .
+    - name: Benchmark (mutex vs lock-free vs wait-free)
+      run: go test -run '^$' -bench=. -benchmem -timeout 30m ./...
