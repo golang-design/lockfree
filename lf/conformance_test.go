@@ -16,6 +16,7 @@ import (
 var (
 	_ lockfree.Queue[int]    = (*lf.Queue[int])(nil)
 	_ lockfree.Stack[int]    = (*lf.Stack[int])(nil)
+	_ lockfree.Stack[int]    = (*lf.EliminationStack[int])(nil)
 	_ lockfree.Map[int, int] = (*lf.SkipList[int, int])(nil)
 	_ lockfree.Map[int, int] = (*lf.OrderedMap[int, int])(nil)
 	_ lockfree.Map[int, int] = (*lf.List[int, int])(nil)
@@ -35,12 +36,21 @@ func TestQueueConformance(t *testing.T) {
 	})
 }
 
-// TestStackConformance runs the shared LIFO-stack conformance suite against the
-// lock-free Treiber stack.
+// TestStackConformance runs the shared LIFO-stack conformance suite against both
+// lock-free stack implementations: the plain Treiber stack and the
+// elimination-backoff stack.
 func TestStackConformance(t *testing.T) {
-	conformtest.Stack(t, func(maxParticipants int) func() lockfree.Stack[int] {
-		s := lf.NewStack[int]()
-		return func() lockfree.Stack[int] { return s }
+	t.Run("Treiber", func(t *testing.T) {
+		conformtest.Stack(t, func(maxParticipants int) func() lockfree.Stack[int] {
+			s := lf.NewStack[int]()
+			return func() lockfree.Stack[int] { return s }
+		})
+	})
+	t.Run("Elimination", func(t *testing.T) {
+		conformtest.Stack(t, func(maxParticipants int) func() lockfree.Stack[int] {
+			s := lf.NewEliminationStack[int]()
+			return func() lockfree.Stack[int] { return s }
+		})
 	})
 }
 
